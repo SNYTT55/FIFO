@@ -3,48 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SYS_INVENTORY_V1</title>
+    <title>SYS_INVENTORY_ULTIMATE</title>
     <style>
         :root {
-            --sys-blue: #001f3f; /* 專業深藍 */
+            --sys-blue: #001f3f;
             --sys-bg: #ffffff;
-            --sys-border: #333333;
+            --sys-border: #000000;
             --sys-gray: #f2f2f2;
-            --sys-accent: #d32f2f; /* 警告紅 */
-            --sys-font: "Courier New", "Ubuntu Mono", monospace;
+            --sys-accent: #d32f2f;
+            --sys-font: "Courier New", Courier, monospace;
         }
 
-        * { box-sizing: border-box; }
-        body { background-color: var(--sys-bg); color: #000; margin: 0; font-family: sans-serif; padding-bottom: 70px; }
-        .mono { font-family: var(--sys-font); letter-spacing: 1px; }
+        * { box-sizing: border-box; font-family: sans-serif; }
+        .mono { font-family: var(--sys-font); font-weight: bold; }
+        body { background-color: var(--sys-bg); color: #000; margin: 0; padding-bottom: 70px; }
 
         /* 導航 */
         .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; height: 60px; z-index: 1000; }
-        .nav-btn { flex: 1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; text-decoration: none; border-right: 1px solid #333; cursor: pointer; }
-        .nav-btn.active { background: #333; color: #00ff00; } /* 選中時呈現終端機綠 */
+        .nav-btn { flex: 1; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; border-right: 1px solid #333; }
+        .nav-btn.active { color: #00ff00; background: #222; }
 
-        /* 頁面內容 */
-        .page { display: none; padding: 20px; max-width: 600px; margin: 0 auto; }
+        /* 頁面 */
+        .page { display: none; padding: 20px; max-width: 900px; margin: 0 auto; }
         .page.active { display: block; }
-        h2 { border-bottom: 2px solid #000; padding-bottom: 5px; font-size: 18px; text-transform: uppercase; margin-bottom: 20px; }
+        h2 { border-bottom: 3px solid #000; padding-bottom: 5px; font-size: 18px; margin-bottom: 20px; }
 
-        /* 賣場風格輸入框 */
-        .terminal-box { border: 2px solid #000; padding: 15px; margin-bottom: 20px; }
-        input, select { width: 100%; height: 40px; border: 1px solid #000; border-radius: 0; padding: 0 10px; font-size: 16px; margin-top: 5px; }
+        /* 賣場元素 */
+        .terminal-box { border: 2px solid #000; padding: 15px; margin-bottom: 20px; background: #fff; }
+        input, select { border: 1px solid #000; border-radius: 0; padding: 8px; font-size: 14px; }
+        .btn { background: #000; color: #fff; border: none; padding: 10px 15px; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        .btn:hover { background: #333; }
 
-        /* 推薦卡片 - 電子標籤風格 */
-        .digital-tag { border: 2px solid #000; padding: 15px; background: #fff; position: relative; }
-        .tag-id { position: absolute; top: -10px; right: 10px; background: #000; color: #fff; font-size: 10px; padding: 2px 5px; }
-        .tag-name { font-size: 20px; font-weight: 900; display: block; margin: 5px 0; border-bottom: 1px solid #eee; }
+        /* 表格輸入區 */
+        .entry-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .entry-table th { background: #000; color: #fff; font-size: 11px; padding: 8px; text-align: left; }
+        .entry-table td { border: 1px solid #000; padding: 0; }
+        .entry-table input, .entry-table select { width: 100%; border: none; height: 35px; outline: none; }
+
+        /* 推薦卡片 */
+        .tag-card { border: 2px solid #000; padding: 20px; position: relative; background: #fff; box-shadow: 6px 6px 0px #ddd; }
+        .tag-series { display: inline-block; background: #000; color: #fff; padding: 2px 8px; font-size: 10px; margin-bottom: 10px; }
         
-        /* 庫存列表 - 報表風格 */
-        .list-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .list-row { border-bottom: 1px solid #ddd; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .item-status { font-size: 10px; border: 1px solid #000; padding: 2px 4px; font-weight: bold; }
-
-        /* 按鈕 */
-        .btn { background: #000; color: #fff; border: none; padding: 10px 15px; cursor: pointer; font-size: 14px; text-transform: uppercase; }
-        .btn:active { background: #444; }
+        /* 列表樣式 */
+        .list-row { border-bottom: 1px solid #ddd; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; }
     </style>
 </head>
 <body>
@@ -52,59 +53,85 @@
 <div id="page-search" class="page active">
     <h2 class="mono">01_QUICK_SEARCH</h2>
     <div class="terminal-box">
-        <label class="mono" style="font-size:11px;">BARCODE_SCAN / SEARCH</label>
-        <input type="text" id="q-search" class="mono" placeholder="INPUT DATA..." oninput="checkStock()">
+        <label class="mono" style="font-size:11px;">STOCK_CHECK_REDUNDANCY</label>
+        <input type="text" id="q-search" class="mono" placeholder="SCAN BARCODE OR NAME..." oninput="checkStock()" style="width:100%; margin-top:5px;">
         <div id="search-feedback" class="mono" style="margin-top:10px; font-size:12px;"></div>
     </div>
 
-    <div class="terminal-box">
-        <label class="mono" style="font-size:11px;">FIFO_RECOMMENDATION</label>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <select id="rec-cat" class="mono" onchange="updateSub()">
+    <div class="terminal-box" style="border-left: 10px solid var(--sys-accent);">
+        <label class="mono" style="font-size:11px;">FIFO_LINKAGE_ENGINE</label>
+        <div style="display:flex; gap:10px; margin: 10px 0;">
+            <select id="rec-cat" onchange="updateSubOptions()" style="flex:1;">
                 <option value="">CATEGORY</option>
-                <option value="保養品">SKINCARE</option>
                 <option value="家用品">HOUSEHOLD</option>
+                <option value="保養品">SKINCARE</option>
                 <option value="保健食品">HEALTH</option>
             </select>
-            <select id="rec-sub" class="mono" onchange="getRec()" disabled>
+            <select id="rec-sub" onchange="getRecommendation()" style="flex:1;" disabled>
                 <option value="">SUB_CAT</option>
             </select>
         </div>
-        <div id="rec-result" style="margin-top:20px;">
-            <div class="mono" style="color:#999; text-align:center;">WAITING_FOR_SELECTION...</div>
+        <div id="rec-display">
+            <div class="mono" style="text-align:center; color:#ccc; padding:30px;">READY_TO_PROCESS...</div>
         </div>
     </div>
 </div>
 
 <div id="page-vault" class="page">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 class="mono">02_VAULT_LIST</h2>
-        <button class="btn mono" onclick="openEdit()">+ ADD_ITEM</button>
+        <h2 class="mono">02_WAREHOUSE_INVENTORY</h2>
+        <button class="btn mono" onclick="openBulkModal()">+ BATCH_ENTRY</button>
     </div>
-    <div id="v-list"></div>
+    <div id="vault-list"></div>
 </div>
 
 <div id="page-sys" class="page">
-    <h2 class="mono">03_SYSTEM_MGMT</h2>
+    <h2 class="mono">03_DATA_MANAGEMENT</h2>
     <div class="terminal-box">
-        <button class="btn mono" style="width:100%; margin-bottom:10px;" onclick="exp()">EXPORT_JSON</button>
-        <button class="btn mono" style="width:100%; background:#eee; color:#000;" onclick="imp()">IMPORT_DATA</button>
-        <textarea id="io" class="mono" style="width:100%; height:80px; margin-top:10px; border:1px solid #000;" placeholder="PASTE_DATA_HERE"></textarea>
+        <button class="btn mono" style="width:100%; margin-bottom:10px;" onclick="exportData()">EXPORT_BACKUP_STRING</button>
+        <textarea id="io-box" class="mono" style="width:100%; height:100px; border:1px solid #000;" placeholder="PASTE_DATA_FOR_IMPORT..."></textarea>
+        <button class="btn mono" style="width:100%; margin-top:10px; background:#eee; color:#000;" onclick="importData()">IMPORT_OVERWRITE</button>
     </div>
-    <div class="mono" style="font-size:12px; color:#999;">ARCHIVE_LOGS:</div>
-    <div id="a-list"></div>
+    <div class="mono" style="font-size:12px; color:#999; margin-bottom:10px;">HISTORY_ARCHIVE:</div>
+    <div id="archive-list"></div>
+</div>
+
+<div id="bulk-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:2000; overflow-y:auto;">
+    <div style="background:#fff; width:95%; max-width:1000px; margin:20px auto; padding:20px; border:3px solid #000;">
+        <h2 class="mono">📦 BATCH_RECEIVING_LOG / 批次進貨單</h2>
+        <div style="overflow-x:auto;">
+            <table class="entry-table">
+                <thead>
+                    <tr>
+                        <th>NAME 品名</th>
+                        <th>CAT 分類</th>
+                        <th>TAGS/SERIES 標籤(空格隔開)</th>
+                        <th>BUY_DATE 購買日</th>
+                        <th>BARCODE 條碼</th>
+                    </tr>
+                </thead>
+                <tbody id="bulk-body">
+                    </tbody>
+            </table>
+        </div>
+        <div style="margin-top:20px; display:flex; gap:10px;">
+            <button class="btn mono" onclick="addBulkRow()">+ ADD_ROW</button>
+            <button class="btn mono" style="background:green;" onclick="confirmBulkSave()">CONFIRM_SAVE</button>
+            <button class="btn mono" style="background:#666;" onclick="closeBulkModal()">EXIT</button>
+        </div>
+    </div>
 </div>
 
 <nav class="nav mono">
-    <div class="nav-btn active" onclick="tab('page-search', this)">SEARCH</div>
-    <div class="nav-btn" onclick="tab('page-vault', this)">VAULT</div>
-    <div class="nav-btn" onclick="tab('page-sys', this)">SYSTEM</div>
+    <div class="nav-btn active" onclick="showTab('page-search', this)">SEARCH</div>
+    <div class="nav-btn" onclick="showTab('page-vault', this)">VAULT</div>
+    <div class="nav-btn" onclick="showTab('page-sys', this)">SYSTEM</div>
 </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('sys_inv_v1') || '[]');
+    let db = JSON.parse(localStorage.getItem('retail_inv_final') || '[]');
 
-    function tab(id, el) {
+    function showTab(id, el) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -113,35 +140,64 @@
     }
 
     function refresh() {
-        const vl = document.getElementById('v-list');
-        const al = document.getElementById('a-list');
-        const active = db.filter(i => i.status !== '已用完').sort((a,b) => new Date(b.id) - new Date(a.id));
-        const archive = db.filter(i => i.status === '已用完');
-
-        vl.innerHTML = active.map(i => `
-            <div class="list-row">
-                <div style="flex:1">
-                    <span class="mono" style="font-size:11px; color:#999;">#${i.barcode || 'N/A'}</span>
-                    <div style="font-weight:bold; font-size:15px;">${i.name}</div>
-                </div>
-                <div class="item-status mono">${i.status}</div>
-                <button class="btn mono" style="padding:4px 8px; margin-left:10px; font-size:10px;" onclick="openEdit(${i.id})">EDIT</button>
-            </div>
-        `).join('');
-
-        al.innerHTML = archive.map(i => `<div class="list-row mono" style="color:#ccc; font-size:12px;">${i.name} [COMPLETED]</div>`).join('');
-        updateSub();
+        renderVault();
+        renderArchive();
+        updateSubOptions();
     }
 
+    // --- 批次輸入邏輯 ---
+    function openBulkModal() {
+        document.getElementById('bulk-modal').style.display = 'block';
+        document.getElementById('bulk-body').innerHTML = '';
+        for(let i=0; i<3; i++) addBulkRow(); // 預設三行
+    }
+
+    function addBulkRow() {
+        const tr = document.createElement('tr');
+        tr.className = "bulk-row";
+        tr.innerHTML = `
+            <td><input type="text" class="b-name"></td>
+            <td><select class="b-cat"><option value="家用品">家用品</option><option value="保養品">保養品</option><option value="保健食品">保健食品</option></select></td>
+            <td><input type="text" class="b-tags" placeholder="#系列名標籤"></td>
+            <td><input type="date" class="b-date" value="${new Date().toISOString().split('T')[0]}"></td>
+            <td><input type="text" class="b-barcode"></td>
+        `;
+        document.getElementById('bulk-body').appendChild(tr);
+    }
+
+    function confirmBulkSave() {
+        const rows = document.querySelectorAll('.bulk-row');
+        rows.forEach(row => {
+            const name = row.querySelector('.b-name').value;
+            if(name) {
+                db.push({
+                    id: Date.now() + Math.random(),
+                    name: name,
+                    category: row.querySelector('.b-cat').value,
+                    tags: row.querySelector('.b-tags').value,
+                    buyDate: row.querySelector('.b-date').value,
+                    barcode: row.querySelector('.b-barcode').value,
+                    status: '庫存'
+                });
+            }
+        });
+        save();
+        closeBulkModal();
+        refresh();
+    }
+
+    function closeBulkModal() { document.getElementById('bulk-modal').style.display = 'none'; }
+
+    // --- 搜尋與關聯推薦 ---
     function checkStock() {
         const v = document.getElementById('q-search').value.toLowerCase();
         const fb = document.getElementById('search-feedback');
-        if(!v) {fb.innerHTML = ''; return;}
+        if(!v) { fb.innerHTML = ''; return; }
         const match = db.filter(i => i.status !== '已用完' && (i.name.toLowerCase().includes(v) || i.barcode === v));
-        fb.innerHTML = match.length > 0 ? `<span style="color:var(--sys-accent)">[MATCH_FOUND: ${match.length}]</span>` : `<span style="color:green">[NO_DUPLICATE]</span>`;
+        fb.innerHTML = match.length > 0 ? `<span style="color:var(--sys-accent)">[MATCH_FOUND: ${match.length}]</span>` : `<span style="color:green">[UNIQUE_ITEM]</span>`;
     }
 
-    function updateSub() {
+    function updateSubOptions() {
         const cat = document.getElementById('rec-cat').value;
         const sub = document.getElementById('rec-sub');
         if(!cat) { sub.disabled = true; return; }
@@ -151,79 +207,72 @@
         sub.disabled = false;
     }
 
-function getRec() {
-    const cat = document.getElementById('rec-cat').value;
-    const sub = document.getElementById('rec-sub').value;
-    const res = document.getElementById('rec-result');
-    if(!sub) return;
+    function getRecommendation() {
+        const cat = document.getElementById('rec-cat').value;
+        const sub = document.getElementById('rec-sub').value;
+        const display = document.getElementById('rec-display');
+        if(!sub) return;
 
-    // 1. 取得初步符合分類的清單並排序 (FIFO)
-    let items = db.filter(i => i.category === cat && i.status !== '已用完' && i.tags.includes(sub));
-    items.sort((a,b) => new Date(a.expiry || a.buyDate) - new Date(b.expiry || b.buyDate));
+        let items = db.filter(i => i.category === cat && i.status !== '已用完' && i.tags.includes(sub));
+        items.sort((a,b) => new Date(a.buyDate) - new Date(b.buyDate)); // FIFO
 
-    if(items.length > 0) {
-        const best = items[0];
-        
-        // 2. 關鍵：尋找是否有同系列的關聯產品
-        // 假設標籤中帶有 '#' 開頭的為系列標籤 (如 #A01)
-        const seriesTag = best.tags.split(' ').find(t => t.startsWith('#'));
-        let linkedSection = "";
+        if(items.length > 0) {
+            const best = items[0];
+            const seriesTag = best.tags.split(' ').find(t => t.startsWith('#'));
+            let linked = "";
 
-        if (seriesTag) {
-            const linkedItems = db.filter(i => 
-                i.id !== best.id && 
-                i.status === '庫存' && 
-                i.tags.includes(seriesTag)
-            );
-            
-            if (linkedItems.length > 0) {
-                linkedSection = `
-                    <div style="margin-top:15px; border-top:1px dashed #000; padding-top:10px;">
-                        <div class="mono" style="font-size:10px; background:#000; color:#fff; display:inline-block; padding:2px 5px;">LINKED_SERIES_FOUND: ${seriesTag}</div>
-                        <div style="font-size:12px; text-align:left; margin-top:5px;">
-                            ${linkedItems.map(li => `[ ] 建議同步取出: ${li.name}`).join('<br>')}
-                        </div>
-                    </div>
-                `;
+            if(seriesTag) {
+                const links = db.filter(i => i.id !== best.id && i.status === '庫存' && i.tags.includes(seriesTag));
+                if(links.length > 0) {
+                    linked = `<div style="background:#f9f9f9; padding:10px; border-top:2px solid #000; margin-top:15px; text-align:left;">
+                        <span class="mono" style="font-size:10px; color:var(--sys-accent);">LINKED_SERIES_DETECTED: ${seriesTag}</span><br>
+                        ${links.map(l => `<span style="font-size:12px;">└ [ ] ${l.name}</span>`).join('<br>')}
+                    </div>`;
+                }
             }
+
+            display.innerHTML = `
+                <div class="tag-card">
+                    <div class="tag-series mono">OPTIMAL_PICK</div>
+                    <div class="mono" style="font-size:22px; margin:10px 0;">${best.name}</div>
+                    <div class="mono" style="font-size:12px; color:#666;">B_DATE: ${best.buyDate}</div>
+                    ${linked}
+                    <button class="btn mono" style="width:100%; margin-top:15px; background:blue;" onclick="quickUse(${best.id})">PICKUP_AND_USE</button>
+                </div>
+            `;
         }
-
-        res.innerHTML = `
-            <div class="digital-tag">
-                <div class="tag-id mono">SYSTEM_RECOMMEND</div>
-                <span class="tag-name">${best.name}</span>
-                <div class="mono" style="font-size:12px;">B_DATE: ${best.buyDate}</div>
-                ${linkedSection}
-                <button class="btn mono" style="width:100%; margin-top:10px;" onclick="qSet(${best.id})">EXECUTE_PICKUP</button>
-            </div>
-        `;
     }
-}
 
-    function qSet(id) {
+    function quickUse(id) {
         const i = db.find(x => x.id === id);
-        i.status = i.status === '使用中' ? '已用完' : '使用中';
-        save(); refresh(); getRec();
+        i.status = '使用中';
+        save(); refresh(); getRecommendation();
     }
 
-    function save() { localStorage.setItem('sys_inv_v1', JSON.stringify(db)); }
-    function exp() { document.getElementById('io').value = JSON.stringify(db); alert('EXPORT_SUCCESS'); }
-    function imp() { try{ db = JSON.parse(document.getElementById('io').value); save(); refresh(); alert('IMPORT_SUCCESS'); }catch(e){alert('ERR');} }
-
-    // 這裡省略新增品項的 Modal 實作，可延用上一版的 saveItem 邏輯，
-    // 主要是 CSS 決定了「賣場感」。
-    function openEdit(id=null) {
-        let n = prompt("ENTER NAME:", id ? db.find(x=>x.id===id).name : "");
-        if(!n) return;
-        if(id) {
-            db.find(x=>x.id===id).name = n;
-        } else {
-            let cat = document.getElementById('rec-cat').value || "保養品";
-            let t = prompt("ENTER TAGS:");
-            db.push({id:Date.now(), name:n, barcode:prompt("BARCODE:"), category:cat, tags:t||"", buyDate:new Date().toISOString().split('T')[0], status:"庫存"});
-        }
-        save(); refresh();
+    // --- 基礎功能 ---
+    function renderVault() {
+        const active = db.filter(i => i.status !== '已用完').sort((a,b) => new Date(b.id) - new Date(a.id));
+        document.getElementById('vault-list').innerHTML = active.map(i => `
+            <div class="list-row">
+                <div style="flex:1">
+                    <div class="mono" style="font-size:11px; color:#999;">${i.barcode || '#NO_CODE'}</div>
+                    <div style="font-weight:bold;">${i.name}</div>
+                    <div style="font-size:10px; color:#666;">${i.tags} | ${i.buyDate}</div>
+                </div>
+                <button class="btn mono" style="font-size:10px; padding:5px;" onclick="markDone(${i.id})">DONE</button>
+            </div>
+        `).join('');
     }
+
+    function renderArchive() {
+        const done = db.filter(i => i.status === '已用完');
+        document.getElementById('archive-list').innerHTML = done.map(i => `<div class="mono" style="font-size:11px; color:#ccc; margin-bottom:5px;">[COMPLETED] ${i.name}</div>`).join('');
+    }
+
+    function markDone(id) { db.find(x => x.id === id).status = '已用完'; save(); refresh(); }
+    function save() { localStorage.setItem('retail_inv_final', JSON.stringify(db)); }
+    function exportData() { document.getElementById('io-box').value = JSON.stringify(db); alert('BACKUP_READY'); }
+    function importData() { try { db = JSON.parse(document.getElementById('io-box').value); save(); refresh(); alert('SUCCESS'); } catch(e) { alert('ERR'); } }
 
     window.onload = refresh;
 </script>
