@@ -36,8 +36,41 @@
         .btn { background: #000; color: #fff; border: none; padding: 15px; font-size: 14px; width: 100%; font-weight: bold; cursor: pointer; }
         .btn-sm { padding: 6px 10px; font-size: 11px; border: 1.5px solid #000; font-weight: bold; background: #fff; cursor: pointer; }
 
-        .item-card { border-bottom: 2px solid #eee; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
-        .tag-pill { background: #eee; font-size: 10px; padding: 1px 5px; border: 1px solid #000; margin-right: 3px; }
+        /* 僅展示針對 VAULT 頁面美化的 CSS 代碼塊 */
+.item-card { 
+    border-bottom: 1px solid #000; 
+    padding: 16px 0; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+/* 狀態標籤美化 */
+.badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 6px;
+    border: 1px solid #000;
+}
+.badge-stock { background: #000; color: #fff; }     /* 庫存：穩重 */
+.badge-using { background: #00ff00; color: #000; }  /* 使用中：顯眼 */
+
+/* 中性資訊區 (日期) */
+.info-date {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+    font-family: var(--sys-font);
+}
+.exp-warning { color: #d32f2f; font-weight: bold; } /* 快過期警告 */
+
+.item-name {
+    font-size: 17px;
+    font-weight: bold;
+    display: block;
+}
 
         #entry-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; overflow-y: auto; padding: 20px; }
     </style>
@@ -46,19 +79,40 @@
 
 <div id="page-search" class="page active">
     <h2 class="mono">01_SEARCH</h2>
-    <div style="border:2px solid #000; padding:15px; margin-bottom:15px;">
-        <input type="text" id="check-input" placeholder="查庫存或標籤..." oninput="doCheck()">
-        <div id="check-result" style="margin-top:5px; font-weight:bold;"></div>
-    </div>
-    <div style="background:#f9f9f9; border:2px solid #000; padding:15px;">
-        <label class="mono" style="font-size:10px;">🎯 AUTO_RECOMMEND</label>
-        <div style="display:flex; gap:5px; margin-top:5px;">
-            <select id="pick-cat" onchange="updatePickSub()" style="flex:1;"></select>
-            <select id="pick-sub" onchange="getRecommended()" disabled style="flex:1;"><option value="">--項目--</option></select>
+
+    <div style="background:#fff; border:1px solid #000; padding:15px; margin-bottom:20px; position:relative;">
+        <div style="font-family: 'Impact', 'Arial Narrow Bold', sans-serif; font-size: 13px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">
+            DATABASE_QUERY
         </div>
+
+        <div style="width: 100%;">
+            <input type="text" id="check-input" placeholder="INPUT_KEYWORDS..." oninput="doCheck()" 
+                   style="width: 100%; border: 1px solid #000; height: 40px; padding: 0 12px; font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: 900; box-sizing: border-box; border-radius: 0;">
+        </div>
+        
+        <div id="check-result" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: 900; margin-top: 8px; min-height: 18px;"></div>
+    </div>
+
+    <div style="background:#fff; border:1px solid #000; padding:15px; margin-bottom:15px; position:relative;">
+        <div style="font-family: 'Impact', 'Arial Narrow Bold', sans-serif; font-size: 13px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">
+            AUTO_RECOMMEND_V2
+        </div>
+
+        <div style="display:flex; gap:5px; margin-bottom: 10px;">
+            <select id="pick-cat" onchange="updatePickSub()" 
+                    style="flex:1; border: 1px solid #000; border-radius:0; height:40px; background:#fff; font-family: 'Courier New', Courier, monospace; font-size:13px; font-weight: 900; padding: 0 10px; appearance: none; -webkit-appearance: none;"></select>
+            <select id="pick-sub" onchange="getRecommended()" disabled 
+                    style="flex:1; border: 1px solid #000; border-radius:0; height:40px; background:#fff; font-family: 'Courier New', Courier, monospace; font-size:13px; font-weight: 900; padding: 0 10px; appearance: none; -webkit-appearance: none;">
+                <option value="">--項目--</option>
+            </select>
+        </div>
+        
         <div id="recommend-area"></div>
     </div>
 </div>
+
+
+
 
 <div id="page-vault" class="page">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -132,7 +186,7 @@
 <script>
     // 資料初始化 (升級至 V52 避免與舊版衝突)
     let db = JSON.parse(localStorage.getItem('retail_v52_db') || '[]');
-    let cfg = JSON.parse(localStorage.getItem('retail_v52_cfg') || '{"cats":"保養品,家用品,食品"}');
+    let cfg = JSON.parse(localStorage.getItem('retail_v52_cfg') || '{"cats":"護膚產品,頭髮產品,身體保養,家用清潔"}');
 
     function save() { 
         localStorage.setItem('retail_v52_db', JSON.stringify(db)); 
@@ -240,17 +294,89 @@
         subS.disabled = (subs.length === 0);
     }
 
-    function getRecommended() {
-        const cat = document.getElementById('pick-cat').value;
-        const sub = document.getElementById('pick-sub').value;
-        const area = document.getElementById('recommend-area');
-        let items = db.filter(i => i.category === cat && i.subCat === sub && i.status === '庫存');
-        items.sort((a,b) => (a.expiry || '9999') > (b.expiry || '9999') ? 1 : -1);
-        if(items.length) {
-            const i = items[0];
-            area.innerHTML = `<div style="border:4px solid #000; padding:15px; margin-top:15px; background:#fff;"><b>${i.name}</b><br><small>${i.tags || ""}</small><button class="btn" style="margin-top:10px; background:blue;" onclick="quickUse(${i.id})">開啟使用</button></div>`;
-        } else { area.innerHTML = ""; }
+function getRecommended() {
+    const cat = document.getElementById('pick-cat').value;
+    const sub = document.getElementById('pick-sub').value;
+    const area = document.getElementById('recommend-area');
+    const today = new Date();
+
+    let items = db.filter(i => i.category === cat && i.subCat === sub && i.status === '庫存');
+
+    items.sort((a, b) => {
+        const dateA = a.expiry ? new Date(a.expiry) : new Date('9999-12-31');
+        const dateB = b.expiry ? new Date(b.expiry) : new Date('9999-12-31');
+        return dateA - dateB;
+    });
+
+    const top3 = items.slice(0, 3);
+    const labelColors = ['#ff0000', '#ea7709', '#ffec00'];
+    const textColors = ['#fff', '#fff', '#fff'];
+
+    if (top3.length > 0) {
+        area.innerHTML = top3.map((i, index) => {
+            const daysLeft = i.expiry ? Math.ceil((new Date(i.expiry) - today) / (1000 * 60 * 60 * 24)) : null;
+            const expLabel = daysLeft !== null ? (daysLeft <= 0 ? "EXPIRED" : `${daysLeft}D_LEFT`) : "NO_EXPIRY";
+            const isCritical = daysLeft !== null && daysLeft <= 30;
+
+            return `
+                <div style="
+                    border: 1.5px solid #000; 
+                    margin-top: 25px; 
+                    background: #f4f4f4; 
+                    padding: 18px 15px 15px 15px; 
+                    position: relative;
+                    box-shadow: 4px 4px 0px #000;
+                    margin-right: 5px;
+                ">
+                    <div class="mono" style="
+                        position: absolute; 
+                        top: -12px; 
+                        left: 10px; 
+                        background: ${labelColors[index]}; 
+                        color: ${textColors[index]}; 
+                        font-size: 11px; 
+                        font-weight: 900;
+                        padding: 3px 12px;
+                        border: 1.5px solid #000;
+                        z-index: 10;
+                    ">
+                        PICK_0${index + 1}
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <div style="font-family: 'Futura', 'Trebuchet MS', Arial, sans-serif; font-weight: 800; font-size: 17px; margin-bottom: 4px; letter-spacing: -0.5px; color: #000;">
+                                ${i.name}
+                            </div>
+                            <div class="mono" style="font-size: 10px; color: ${isCritical ? '#ff0000' : '#666'};">
+                                EXP: ${i.expiry || '----/--/--'} [${expLabel}]
+                            </div>
+                        </div>
+                        
+                        <button onclick="quickUse(${i.id})" 
+                                class="mono"
+                                style="
+                                    border: none;
+                                    background: #000; 
+                                    color: #fff;
+                                    padding: 8px 16px; 
+                                    font-size: 11px; 
+                                    font-weight: 900; 
+                                    cursor: pointer; 
+                                    letter-spacing: 1px;
+                                    transition: opacity 0.2s;
+                                ">
+                            OPEN_NOW
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        area.innerHTML = `<div class="mono" style="text-align:center; padding: 20px; color: #aaa; border: 1.5px solid #000; margin-top: 20px; background:#f4f4f4; box-shadow: 4px 4px 0px #000; margin-right:5px;">EMPTY_STOCK</div>`;
     }
+}
+
 
     function quickUse(id) {
         const i = db.find(x => x.id === id);
@@ -266,15 +392,67 @@
         res.innerHTML = count > 0 ? `⚠️ 庫存：${count}` : `✅ 無庫存`;
     }
 
-    // --- 渲染渲染 ---
+
+
+
     function renderVault() {
-        const list = document.getElementById('vault-list');
-        list.innerHTML = db.filter(i => i.status !== '已用完').map(i => `
-            <div class="item-card">
-                <div><span class="mono" style="font-size:9px; border:1px solid #000; padding:1px 4px;">${i.status}</span><br><b>${i.name}</b></div>
-                <button class="btn-sm mono" onclick="editItem(${i.id})">EDIT</button>
-            </div>`).join('');
-    }
+    const list = document.getElementById('vault-list');
+    // 假設 db 是你的資料庫，這裡過濾出在席庫存
+    const activeItems = db.filter(i => i.status === '庫存');
+
+    list.innerHTML = activeItems.map(i => `
+        <div style="
+            border: 1px solid #000; 
+            margin-bottom: 20px; 
+            background: #fff; 
+            padding: 15px; 
+            position: relative;
+            box-shadow: 4px 4px 0px #000; /* 延續硬陰影 */
+            margin-right: 5px;
+        ">
+            <div class="mono" style="
+                position: absolute; 
+                top: -10px; 
+                left: 10px; 
+                background: #000; 
+                color: #fff; 
+                font-size: 10px; 
+                font-weight: 900;
+                padding: 2px 8px;
+                border: 1px solid #000;
+            ">
+                ${i.category} / ${i.subCat}
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                <div style="flex: 1;">
+                    <div style="font-family: 'Courier New', Courier, monospace; font-weight: 900; font-size: 16px; color: #000; letter-spacing: -0.5px;">
+                        ${i.name}
+                    </div>
+                    <div style="font-family: 'Courier New', Courier, monospace; font-size: 10px; color: #666; margin-top: 4px;">
+                        ID: ${String(i.id).padStart(4, '0')} | EXP: ${i.expiry || '----/--/--'}
+                    </div>
+                </div>
+
+                <button onclick="useItem(${i.id})" 
+                        style="
+                            border: none;
+                            background: #000; 
+                            color: #fff;
+                            padding: 6px 12px; 
+                            font-size: 10px; 
+                            font-family: 'Impact', sans-serif;
+                            font-weight: 400; 
+                            cursor: pointer; 
+                            letter-spacing: 1px;
+                        ">
+                    MARK_USED
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
 
     function refresh() {
         document.getElementById('cfg-cats').value = cfg.cats;
