@@ -222,13 +222,13 @@
     <h2 class="mono" style="font-size: 24px; margin-bottom: 20px; border-bottom: 4px solid #000; padding-bottom: 10px;">01_SEARCH</h2>
     
     <div style="background:#fff; border:2px solid #000; padding:15px; margin-bottom:25px; box-shadow: 4px 4px 0px #eee;">
-        <div class="mono" style="font-size: 11px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">DATABASE_QUERY</div>
+        <div class="mono" style="font-size: 11px; background: #000; color: #fff !important;  display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">DATABASE_QUERY</div>
         <input type="text" id="check-input" placeholder="INPUT_KEYWORDS..." oninput="doCheck()">
         <div id="check-result" class="mono" style="font-size: 12px; margin-top: 10px; min-height: 18px;"></div>
     </div>
 
     <div style="background:#fff; border:2px solid #000; padding:15px; box-shadow: 4px 4px 0px #eee;">
-        <div class="mono" style="font-size: 11px; background: #000; color: :#fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">AUTO_RECOMMEND</div>
+        <div class="mono" style="font-size: 11px; background: #000; color: #fff !important; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">AUTO_RECOMMEND</div>
         <div class="form-row" style="margin-bottom: 15px;">
             <select id="pick-cat" onchange="updatePickSub()"></select>
             <select id="pick-sub" onchange="getRecommended()" disabled><option value="">-----</option></select>
@@ -296,7 +296,7 @@
     </div>
 
     <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" style="flex:2;">
             <label>PRODUCT_NAME</label>
             <input type="text" id="in-name" placeholder="INPUT_NAME...">
         </div>
