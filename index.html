@@ -3,188 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RETAIL_PRO_V5.2</title>
+    <title>RETAIL</title>
     <style>
-        :root { --sys-bg: #ffffff; --sys-font: "Courier New", monospace; }
-        * { box-sizing: border-box; font-family: -apple-system, "Noto Sans TC", sans-serif; }
-        .mono { font-family: var(--sys-font); font-weight: bold; }
-        body { background: var(--sys-bg); margin: 0; padding-bottom: 80px; color: #000; }
-        
-        .page { display: none; padding: 20px; max-width: 600px; margin: auto; }
-        .page.active { display: block !important; }
-        
-        /* 表單佈局 */
-        .form-row { display: flex; gap: 8px; margin-bottom: 12px; }
-        .flex-1 { flex: 1; }
-        .flex-4 { flex: 4; }
-        .flex-6 { flex: 6; }
-        
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #666; }
-        
-        input, select, textarea { 
-            width: 100%; border: 2px solid #000; padding: 10px 8px; font-size: 15px; outline: none; border-radius: 0; 
-            background: #fff; height: 45px; appearance: none; -webkit-appearance: none;
-        }
-        input:focus { background: #f0f7ff; border-color: #0044cc; }
+    :root { --sys-bg: #ffffff; --sys-font: "Courier New", monospace; }
+    * { box-sizing: border-box; }
+    .mono { font-family: var(--sys-font); font-weight: 900; }
+    body { background: var(--sys-bg); margin: 0; padding-bottom: 80px; color: #000; overflow-x: hidden; }
+    
+    .page { display: none; padding: 20px; max-width: 600px; margin: auto; }
+    .page.active { display: block !important; }
+    
+    /* 全域輸入框樣式硬化 */
+    input, select, textarea { 
+        width: 100%; border: 2px solid #000; padding: 10px 8px; font-size: 14px; outline: none; border-radius: 0; 
+        background: #fff; height: 40px; appearance: none; -webkit-appearance: none;
+        font-family: var(--sys-font); font-weight: 900;
+    }
+    input:focus, select:focus { background: #000 !important; color: #fff !important; }
+    
+    /* 導覽列 */
+    .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; height: 65px; z-index: 999; }
+    .nav-btn { flex: 1; color: #666; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border: none; background: none; font-family: 'Impact', sans-serif; letter-spacing: 1px; }
+    .nav-btn.active { color: #fff; border-top: 4px solid #00ff00; background: #000; }
+    
+    .btn { background: #000; color: #fff; border: 2px solid #000; padding: 15px; font-size: 14px; width: 100%; font-family: 'Impact', sans-serif; letter-spacing: 2px; cursor: pointer; box-shadow: 4px 4px 0px #eee; }
+    .btn:active { transform: translate(2px, 2px); box-shadow: none; }
+    .btn-sm { padding: 6px 12px; font-size: 11px; border: 1px solid #000; background: #fff; cursor: pointer; font-family: var(--sys-font); font-weight: 900; }
 
-        /* 導覽列 */
-        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; height: 65px; z-index: 999; }
-        .nav-btn { flex: 1; color: #666; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border: none; background: none; }
-        .nav-btn.active { color: #fff; border-top: 4px solid #00ff00; background: #111; }
-        
-        .btn { background: #000; color: #fff; border: none; padding: 15px; font-size: 14px; width: 100%; font-weight: bold; cursor: pointer; }
-        .btn-sm { padding: 6px 10px; font-size: 11px; border: 1.5px solid #000; font-weight: bold; background: #fff; cursor: pointer; }
+    /* 彈窗樣式修正 */
+    #entry-overlay { 
+        display: none; 
+        position: fixed; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        background: #ffffff;
+        border: 10px solid #000; /* 增加粗邊框，讓它看起來像個實體模組 */
+        box-sizing: border-box; 
+        z-index: 1000; 
+        overflow-y: auto; 
+        padding: 20px; 
+    }
 
-        /* 僅展示針對 VAULT 頁面美化的 CSS 代碼塊 */
-.item-card { 
-    border-bottom: 1px solid #000; 
-    padding: 16px 0; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-}
+    .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
+    .form-group { display: flex; flex-direction: column; flex: 1; min-width: 0; } 
 
-/* 狀態標籤美化 */
-.badge {
-    font-size: 10px;
-    padding: 2px 8px;
-    font-weight: bold;
-    display: inline-block;
-    margin-bottom: 6px;
-    border: 1px solid #000;
-}
-.badge-stock { background: #000; color: #fff; }     /* 庫存：穩重 */
-.badge-using { background: #00ff00; color: #000; }  /* 使用中：顯眼 */
+    /* 彈窗標籤樣式統一 */
+    #entry-overlay .form-group label { 
+        font-family: var(--sys-font); 
+        font-size: 10px; 
+        font-weight: 900; 
+        margin-bottom: 5px; 
+        color: #000; 
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+    }
+    #entry-overlay .form-group label::before { content: ">"; margin-right: 4px; color: #00ff00; background: #000; padding: 0 2px; }
 
-/* 中性資訊區 (日期) */
-.info-date {
-    font-size: 11px;
-    color: #666;
-    margin-top: 4px;
+    /* 貨架樣式 (Vault Shelf) */
+    .shelf-container { border: 2px solid #000; margin-bottom: 35px; position: relative; background: #fff; box-shadow: 4px 4px 0px #eee; }
+    .shelf-label { position: absolute; top: -12px; left: 12px; background: #000; color: #fff; font-family: 'Impact'; font-size: 14px; padding: 2px 12px; letter-spacing: 1px; }
+    .item-line { border-bottom: 1px solid #f0f0f0; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+    .item-line:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02); /* 極淺的灰色，增加層次感 */
+  }
+
+  /* 懸停效果，讓你知道現在滑鼠在哪一行 */
+  .item-line:hover {
+      border-left: 4px solid #000;
+      padding-left: 8px;
+      transition: all 0.1s;
+  }
+
+    summary.mono {
+    background: #000 !important;
+    color: #fff !important;
+    transition: all 0.2s;
+    }
+    summary.mono:hover {
+        color: #00ff00 !important;
+    }
+
+    /* 系統分頁專屬：強化控制面板感 */
+    .sys-card {
+        border: 2px solid #000;
+        padding: 20px;
+        background: #fff;
+        margin-bottom: 25px;
+        box-shadow: 4px 4px 0px #000;
+    }
+
+    .sys-label {
+        font-family: 'Impact', sans-serif;
+        font-size: 14px;
+        background: #000;
+        color: #fff;
+        padding: 2px 10px;
+        display: inline-block;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+    }
+
+    #page-sys .btn-sm { 
+    border: 2px solid #000; 
+    box-shadow: 2px 2px 0px #000; 
+    transition: none;
+    }
+    #page-sys .btn-sm:active { transform: translate(1px, 1px); box-shadow: none; }
+
+    /* 增加一種 "Scanline" 掃描線質感給 ARCHIVE_LOG */
+    /* CSS 區塊優化 */
+    #archive-list {
+        background: #000; 
+        color: #00ff00; /* 螢光綠，代表任務達成 */
+        padding: 18px; 
+        border: 2px solid #000; 
+        font-family: var(--sys-font); 
+        font-size: 11px;
+        line-height: 1.8;
+        box-shadow: inset 0 0 10px rgba(0,255,0,0.15); /* 微弱的內發光 */
+        min-height: 120px;
+    }
+
+    #archive-list::after {
+        content: " ";
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 2px, 3px 100%;
+        pointer-events: none;
+    }
+
+    /* 讓按鈕的陰影更有質感 */
+    .btn {
+        box-shadow: 4px 4px 0px #000; /* 改為黑色陰影會比灰色 #eee 更一致 */
+    }
+    
+    .btn-danger {
+    background: #ff0000;
+    color: #fff;
+    border: 2px solid #000;
     font-family: var(--sys-font);
-}
-.exp-warning { color: #d32f2f; font-weight: bold; } /* 快過期警告 */
-
-.item-name {
-    font-size: 17px;
-    font-weight: bold;
-    display: block;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #000;
+    animation: danger-pulse 2s infinite; /* 增加呼吸燈效果 */
 }
 
-        #entry-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 1000; overflow-y: auto; padding: 20px; }
-    </style>
+    @keyframes danger-pulse {
+        0% { background: #ff0000; }
+        50% { background: #b30000; }
+        100% { background: #ff0000; }
+    }
+
+    .btn-danger:active {
+        transform: translate(1px, 1px);
+        box-shadow: none;
+        animation: none;
+        background: #000; /* 按下時反黑 */
+    }
+
+</style>
 </head>
 <body>
 
 <div id="page-search" class="page active">
     <h2 class="mono">01_SEARCH</h2>
-
     <div style="background:#fff; border:1px solid #000; padding:15px; margin-bottom:20px; position:relative;">
-        <div style="font-family: 'Impact', 'Arial Narrow Bold', sans-serif; font-size: 13px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">
-            DATABASE_QUERY
-        </div>
-
-        <div style="width: 100%;">
-            <input type="text" id="check-input" placeholder="INPUT_KEYWORDS..." oninput="doCheck()" 
-                   style="width: 100%; border: 1px solid #000; height: 40px; padding: 0 12px; font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: 900; box-sizing: border-box; border-radius: 0;">
-        </div>
-        
-        <div id="check-result" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; font-weight: 900; margin-top: 8px; min-height: 18px;"></div>
+        <div style="font-family: 'Impact', sans-serif; font-size: 13px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">DATABASE_QUERY</div>
+        <input type="text" id="check-input" placeholder="INPUT_KEYWORDS..." oninput="doCheck()">
+        <div id="check-result" class="mono" style="font-size: 12px; margin-top: 8px; min-height: 18px;"></div>
     </div>
 
-    <div style="background:#fff; border:1px solid #000; padding:15px; margin-bottom:15px; position:relative;">
-        <div style="font-family: 'Impact', 'Arial Narrow Bold', sans-serif; font-size: 13px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">
-            AUTO_RECOMMEND_V2
-        </div>
-
+    <div style="background:#f4f4f4; border:1px solid #000; padding:15px; margin-bottom:15px; position:relative;">
+        <div style="font-family: 'Impact', sans-serif; font-size: 13px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">AUTO_RECOMMEND</div>
         <div style="display:flex; gap:5px; margin-bottom: 10px;">
-            <select id="pick-cat" onchange="updatePickSub()" 
-                    style="flex:1; border: 1px solid #000; border-radius:0; height:40px; background:#fff; font-family: 'Courier New', Courier, monospace; font-size:13px; font-weight: 900; padding: 0 10px; appearance: none; -webkit-appearance: none;"></select>
-            <select id="pick-sub" onchange="getRecommended()" disabled 
-                    style="flex:1; border: 1px solid #000; border-radius:0; height:40px; background:#fff; font-family: 'Courier New', Courier, monospace; font-size:13px; font-weight: 900; padding: 0 10px; appearance: none; -webkit-appearance: none;">
-                <option value="">--項目--</option>
-            </select>
+            <select id="pick-cat" onchange="updatePickSub()"></select>
+            <select id="pick-sub" onchange="getRecommended()" disabled><option value="">-----</option></select>
         </div>
-        
         <div id="recommend-area"></div>
     </div>
 </div>
 
-
-
-
 <div id="page-vault" class="page">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px; border-bottom: 2px solid #000; padding-bottom: 10px;">
         <h2 class="mono" style="margin:0;">02_VAULT</h2>
-        <button class="btn-sm mono" style="background:#000; color:#fff;" onclick="openEntry()">+ ADD_ITEM</button>
+        <button class="btn-sm mono" style="background:#000; color:#fff; letter-spacing:1px;" onclick="openEntry()">[+] ADD_ITEM</button>
     </div>
-    <div id="vault-list"></div>
+    <div id="vault-shelves-container"></div>
 </div>
+
 
 <div id="page-sys" class="page">
-    <h2 class="mono">03_SYSTEM</h2>
-    
-    <div style="margin-bottom:20px;">
-        <label class="mono" style="font-size:10px;">定義大類別 (用逗號隔開)</label>
-        <input type="text" id="cfg-cats" onchange="saveCfg()">
+    <h2 class="mono" style="font-size: 28px; border-bottom: 6px solid #000; padding-bottom: 10px; margin-bottom: 30px;">03_SYSTEM</h2>
+
+    <div style="border: 2px solid #000; padding: 18px; margin-bottom: 25px; box-shadow: 4px 4px 0px #000; background:#fff;">
+        <div class="mono" style="font-size: 11px; background: #000; color: #fff; padding: 2px 10px; display: inline-block; margin-bottom: 15px; letter-spacing:1px;">[CONFIG_PROTOCOL]</div>
+        <input type="text" id="cfg-cats" onchange="saveCfg()" style="background:#f4f4f4;">
     </div>
 
-    <div style="border:2px solid #000; padding:15px; background:#f9f9f9;">
-        <label class="mono" style="font-size:10px;">💾 DATA_BACKUP / RESTORE</label>
-        <textarea id="io-box" style="width:100%; height:80px; font-size:10px; margin-top:10px; border:1px solid #000; padding:10px; font-family:monospace;" placeholder="備份代碼會顯示在此..."></textarea>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn-sm" style="flex:1; background:#000; color:#fff;" onclick="exportDB()">匯出備份</button>
-            <button class="btn-sm" style="flex:1;" onclick="importDB()">匯入還原</button>
+    <div style="border: 2px solid #000; padding: 18px; background: #fff; box-shadow: 4px 4px 0px #000; margin-bottom: 40px;">
+        <div class="mono" style="font-size: 11px; background: #000; color: #fff; padding: 2px 10px; display: inline-block; margin-bottom: 15px; letter-spacing:1px;">[DATA_BRIDGE]</div>
+        <textarea id="io-box" style="width:100%; height:100px; font-size:10px; border:2px solid #000; padding:10px; font-family:monospace; background:#f4f4f4;" placeholder="LISTENING_FOR_STREAM..."></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn-sm" style="flex:1; background:#000; color:#fff;" onclick="exportDB()">↑ EXPORT</button>
+            <button class="btn-sm" style="flex:1; background:#fff; color:#000;" onclick="importDB()">↓ IMPORT</button>
         </div>
-        <div style="font-size:10px; color:red; margin-top:5px;">＊更換手機前請務必「匯出」並自行保存這段代碼。</div>
     </div>
 
-    <div id="archive-list" style="font-size:12px; color:#999; border-top:1px solid #eee; padding-top:10px; margin-top:20px;"></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div class="mono" style="font-size: 13px; font-weight: 900; letter-spacing: 1px;">> ARCHIVE_LOG</div>
+        <button class="btn-danger" onclick="clearArchive()" style="padding: 4px 12px; font-size: 10px;">PURGE_SYSTEM</button>
+    </div>
+    <div id="archive-list">
+        </div>
 </div>
 
+
+
 <div id="entry-overlay">
-    <h2 class="mono" id="form-title">ENTRY_LOG</h2>
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px; border-bottom: 6px solid #000; padding-bottom: 10px;">
+        <h2 class="mono" id="form-title" style="margin:0; font-size: 28px; font-family: 'Impact', sans-serif;">NEW_ENTRY_LOG</h2>
+        <div onclick="closeEntry()" style="cursor:pointer; font-weight:900; background:#ff0000; color:#fff; padding:4px 12px; font-family:var(--sys-font); font-size:12px; border: 2px solid #000;">CLOSE_X</div>
+    </div>
+
     <input type="hidden" id="edit-id">
     
     <div class="form-row">
-        <div class="form-group flex-1"><label>CAT</label><select id="in-cat"></select></div>
-        <div class="form-group flex-1"><label>SUB_CAT</label><input type="text" id="in-sub"></div>
-        <div class="form-group flex-1">
+        <div class="form-group" style="flex:1.2;">
             <label>STATUS</label>
-            <select id="in-status"><option value="庫存">庫存</option><option value="使用中">使用中</option><option value="已用完">已用完</option></select>
+            <select id="in-status">
+                <option value="庫存">STOCK</option>
+                <option value="使用中">USING</option>
+            </select>
+        </div>
+        <div class="form-group" style="flex:1.5;">
+            <label>CATEGORY</label>
+            <select id="in-cat"></select>
+        </div>
+        <div class="form-group" style="flex:1.5;">
+            <label>SUB_CAT</label>
+            <input type="text" id="in-sub" placeholder="IDENTIFIER...">
         </div>
     </div>
 
     <div class="form-row">
-        <div class="form-group flex-6"><label>PRODUCT_NAME</label><input type="text" id="in-name"></div>
-        <div class="form-group flex-4"><label>TAGS</label><input type="text" id="in-tag"></div>
+        <div class="form-group" style="flex:3;">
+            <label>PRODUCT_NAME</label>
+            <input type="text" id="in-name" placeholder="INPUT_NAME...">
+        </div>
+        <div class="form-group" style="flex:2;">
+            <label>TAGS</label>
+            <input type="text" id="in-tag" placeholder="KEYWORDS...">
+        </div>
     </div>
 
     <div class="form-row">
-        <div class="form-group flex-1"><label>BUY_DATE</label><input type="date" id="in-buy"></div>
-        <div class="form-group flex-1"><label>EXPIRY</label><input type="date" id="in-exp"></div>
+        <div class="form-group">
+            <label>BUY_DATE</label>
+            <input type="date" id="in-buy">
+        </div>
+        <div class="form-group">
+            <label>EXPIRY_DATE</label>
+            <input type="date" id="in-exp">
+        </div>
     </div>
 
     <div class="form-row">
-        <div class="form-group flex-1"><label>BARCODE</label><input type="text" id="in-bar"></div>
-        <div class="form-group flex-1"><label>BATCH_QTY (包數)</label><input type="number" id="in-qty" value="1" min="1"></div>
+        <div class="form-group" style="flex:2;">
+            <label>BARCODE_SERIAL</label>
+            <input type="text" id="in-bar" placeholder="SCAN_OR_TYPE...">
+        </div>
+        <div class="form-group" style="flex:1;">
+            <label>QUANTITY</label>
+            <input type="number" id="in-qty" value="1" min="1">
+        </div>
     </div>
 
-    <div style="display:flex; gap:10px; margin-top:30px;">
-        <button class="btn" style="background:#eee; color:#000; flex:1;" onclick="closeEntry()">CANCEL</button>
-        <button class="btn" style="flex:2;" onclick="saveEntry()">CONFIRM_SAVE</button>
-    </div>
+    <button class="btn" style="margin-top:25px; height: 65px; background: #000; color: #fff;" onclick="saveEntry()">EXECUTE_INBOUND_COMMAND</button>
 </div>
 
-<nav class="nav mono">
+
+<nav class="nav">
     <div class="nav-btn active" onclick="tab('page-search', this)">SEARCH</div>
     <div class="nav-btn" onclick="tab('page-vault', this)">VAULT</div>
     <div class="nav-btn" onclick="tab('page-sys', this)">SYSTEM</div>
 </nav>
 
 <script>
-    // 資料初始化 (升級至 V52 避免與舊版衝突)
     let db = JSON.parse(localStorage.getItem('retail_v52_db') || '[]');
     let cfg = JSON.parse(localStorage.getItem('retail_v52_cfg') || '{"cats":"護膚產品,頭髮產品,身體保養,家用清潔"}');
 
@@ -201,10 +308,9 @@
         refresh(); 
     }
 
-    // --- 表單邏輯 ---
     function openEntry() {
         document.getElementById('entry-overlay').style.display = 'block';
-        document.getElementById('form-title').innerText = 'NEW_ENTRY';
+        document.getElementById('form-title').innerText = 'NEW_ENTRY_LOG';
         document.getElementById('edit-id').value = '';
         document.getElementById('in-cat').innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
         document.getElementById('in-buy').value = new Date().toISOString().split('T')[0];
@@ -213,32 +319,15 @@
         ['in-sub','in-name','in-tag','in-exp','in-bar'].forEach(id => document.getElementById(id).value = '');
     }
 
-    function editItem(id) {
-        const i = db.find(x => x.id === id);
-        openEntry();
-        document.getElementById('form-title').innerText = 'EDIT_ITEM';
-        document.getElementById('edit-id').value = i.id;
-        document.getElementById('in-cat').value = i.category;
-        document.getElementById('in-sub').value = i.subCat;
-        document.getElementById('in-name').value = i.name;
-        document.getElementById('in-tag').value = i.tags || '';
-        document.getElementById('in-buy').value = i.buyDate;
-        document.getElementById('in-exp').value = i.expiry || '';
-        document.getElementById('in-bar').value = i.barcode || '';
-        document.getElementById('in-status').value = i.status;
-        document.getElementById('in-qty').disabled = true;
-    }
-
     function saveEntry() {
         const eid = document.getElementById('edit-id').value;
         const qty = parseInt(document.getElementById('in-qty').value) || 1;
-        const name = document.getElementById('in-name').value;
-        if(!name) return alert("請輸入品名");
+        const baseName = document.getElementById('in-name').value;
+        if(!baseName) return alert("MISSING_NAME");
 
         const data = {
             category: document.getElementById('in-cat').value,
             subCat: document.getElementById('in-sub').value || "未分類",
-            name: name,
             tags: document.getElementById('in-tag').value,
             buyDate: document.getElementById('in-buy').value,
             expiry: document.getElementById('in-exp').value,
@@ -247,11 +336,18 @@
         };
 
         if(eid) {
+            // 【編輯模式】
             const idx = db.findIndex(x => x.id == eid);
-            db[idx] = {...db[idx], ...data};
+            if(idx !== -1) db[idx] = { ...db[idx], ...data, name: baseName };
         } else {
+            // 【新增模式】處理 QTY
             for(let i=0; i<qty; i++) {
-                db.push({ ...data, id: Date.now() + i });
+                const newName = qty > 1 ? `${baseName} (${i+1}/${qty})` : baseName;
+                db.push({
+                    id: Date.now() + i,
+                    name: newName,
+                    ...data
+                });
             }
         }
         save(); closeEntry(); refresh();
@@ -259,212 +355,335 @@
 
     function closeEntry() { document.getElementById('entry-overlay').style.display = 'none'; }
 
-    // --- 備份功能補回 ---
-    function exportDB() {
-        const data = { db: db, cfg: cfg };
-        document.getElementById('io-box').value = JSON.stringify(data);
-        document.getElementById('io-box').select();
-        document.execCommand('copy');
-        alert("代碼已產生並複製到剪貼簿！");
+    function editItem(id) {
+        const i = db.find(x => x.id === id);
+        if(!i) return;
+        openEntry();
+        document.getElementById('form-title').innerText = 'UPDATE_ENTRY_LOG';
+        document.getElementById('edit-id').value = i.id;
+        document.getElementById('in-cat').value = i.category;
+        document.getElementById('in-sub').value = i.subCat;
+        document.getElementById('in-name').value = i.name;
+        document.getElementById('in-tag').value = i.tags || '';
+        document.getElementById('in-buy').value = i.buyDate;
+        document.getElementById('in-exp').value = i.expiry;
+        document.getElementById('in-bar').value = i.barcode || '';
+        document.getElementById('in-status').value = i.status;
+        document.getElementById('in-qty').value = 1;
+        document.getElementById('in-qty').disabled = true;
     }
 
-    function importDB() {
-        const raw = document.getElementById('io-box').value;
-        if(!raw) return alert("請先在框內貼上備份代碼");
-        try {
-            const parsed = JSON.parse(raw);
-            if(confirm("確定要覆蓋現有資料嗎？此動作無法復原。")) {
-                db = parsed.db;
-                cfg = parsed.cfg;
-                save();
-                refresh();
-                alert("還原成功！");
-            }
-        } catch(e) {
-            alert("代碼格式不正確，請重新確認。");
+    function deleteItem(id) {
+        if(confirm("CONFIRM_PERMANENT_DELETION?")) {
+            db = db.filter(x => x.id !== id);
+            save(); refresh();
         }
     }
 
-    // --- 搜尋與推薦 ---
+    function finishItem(id) {
+    if(confirm("MARK AS FINISHED? (MOVE TO ARCHIVE)")) {
+        const i = db.find(x => x.id === id);
+        if(i) {
+            i.status = '已用完';
+            i.finishDate = new Date().toISOString().split('T')[0];
+            save(); refresh();
+        }
+    }
+}
+
+
+    function autoSetExpiry() {
+        const buyDateVal = document.getElementById('in-buy').value;
+        if (!buyDateVal) return;
+        let date = new Date(buyDateVal);
+        date.setMonth(date.getMonth() + 36);
+        document.getElementById('in-exp').value = date.toISOString().split('T')[0];
+    }
+    document.getElementById('in-buy').addEventListener('change', autoSetExpiry);
+
+
+  function renderVault() {
+    const container = document.getElementById('vault-shelves-container');
+    const usingItems = db.filter(i => i.status === '使用中');
+    usingItems.sort((a, b) => new Date(a.openDate || '9999-12-31') - new Date(b.openDate || '9999-12-31'));
+
+    const activeItems = db.filter(i => i.status === '庫存');
+    const grouped = activeItems.reduce((acc, item) => {
+        if (!acc[item.category]) acc[item.category] = [];
+        acc[item.category].push(item);
+        return acc;
+    }, {});
+
+    // --- 渲染：使用中看板 (改成淡黃色樣式) ---
+    let usingSection = "";
+    if (usingItems.length > 0) {
+        usingSection = `
+            <div class="shelf-container" style="background: #fff9c4; border: 2px solid #000; box-shadow: 4px 4px 0px #000;">
+                <div class="shelf-label" style="background: #000; color: #fff9c4; border: 1px solid #000;">ACTIVE_USING_LOG</div>
+                <div style="padding: 25px 12px 10px 12px;">
+                    ${usingItems.map(i => {
+                        const days = i.openDate ? Math.floor((new Date() - new Date(i.openDate)) / (1000 * 60 * 60 * 24)) : 0;
+                        return `
+                        <div class="item-line" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+                            <div style="flex: 1;">
+                                <span class="mono" style="font-size:10px; border:1px solid #000; padding:0px 4px; background:#000; color:#fff;">${i.subCat}</span>
+                                <span class="mono" style="font-size:14px; margin-left:8px; font-weight:900; color:#000;">${i.name}</span>
+                                <div class="mono" style="font-size:9px; color:#666; margin-top:4px; font-weight:bold;">
+                                    > OPEN_DATE: ${i.openDate} (T+${days} DAYS)
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 4px;">
+                                <button onclick="editItem(${i.id})" class="btn-sm">EDIT</button>
+                                <button onclick="finishItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">OFF</button>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+          
+        `;
+    }
+
+    // --- 渲染：庫存分組 (加入摺疊功能) ---
+    let stockSection = `
+        <details open style="margin-top: 20px;">
+            <summary class="mono" style="
+                text-align: center; 
+                cursor: pointer; 
+                padding: 10px; 
+                background: #eee; 
+                border: 2px solid #000; 
+                list-style: none; /* 隱藏預設箭頭 */
+                font-size: 13px;
+                letter-spacing: 2px;
+            ">
+                ▼ CLICK_TO_TOGGLE_STOCK_LIST ▼
+            </summary>
+            
+            <div style="margin-top: 25px;">
+                ${Object.keys(grouped).map(cat => `
+                    <div class="shelf-container">
+                        <div class="shelf-label">${cat.toUpperCase()}</div>
+                        <div style="padding: 25px 12px 10px 12px;">
+                            ${grouped[cat].map(i => `
+                                <div class="item-line">
+                                    <div style="flex: 1;">
+                                        <span class="mono" style="font-size:10px; border:1px solid #ccc; padding:0px 4px; color:#666;">${i.subCat}</span>
+                                        <span class="mono" style="font-size:14px; margin-left:8px; font-weight:900;">${i.name}</span>
+                                        <div class="mono" style="font-size:9px; color:#aaa; margin-top:4px;">EXP: ${i.expiry || '--'}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 4px;">
+                                        <button onclick="editItem(${i.id})" class="btn-sm">EDIT</button>
+                                        <button onclick="deleteItem(${i.id})" class="btn-sm" style="color:red; border-color:red;">DEL</button>
+                                        <button onclick="useItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">ON</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="mono" style="text-align: center; font-size: 10px; color: #ccc; margin-bottom: 20px;">
+                [ END_OF_STOCK_LIST ]
+            </div>
+        </details>
+    `;
+
+    container.innerHTML = usingSection + stockSection;
+}
+
+
+
+    function useItem(id) {
+    const i = db.find(x => x.id === id);
+    if(i) { 
+        i.status = '使用中'; 
+        i.openDate = new Date().toISOString().split('T')[0]; // 自動紀錄開封日期
+        save(); refresh(); 
+    }
+}
+
+    function doCheck() {
+        const q = document.getElementById('check-input').value.trim().toLowerCase();
+        const res = document.getElementById('check-result');
+        if(!q) { res.innerHTML = ""; return; }
+
+        const matches = db.filter(i => i.status !== '已用完' && (
+            (i.barcode && i.barcode.includes(q)) || 
+            i.name.toLowerCase().includes(q) ||
+            (i.tags && i.tags.toLowerCase().includes(q))
+        ));
+
+        if (matches.length === 0) {
+            res.innerHTML = `<div style="color:#00ff00; padding:15px; border:1px solid #000; margin-top:10px;">✅ NO_MATCH</div>`;
+            return;
+        }
+
+        const vCount = matches.filter(i => i.status === '庫存').length;
+        const uCount = matches.filter(i => i.status === '使用中').length;
+
+        res.innerHTML = `
+            <div style="background:#000; color:#fff; padding:10px; margin:10px 0;">
+                VAULT: ${vCount} | USING: ${uCount}
+            </div>
+            ${matches.map(i => `
+                <div style="border:1px solid #000; padding:8px; margin-bottom:5px; background:${i.barcode && i.barcode.endsWith(q)?'#fff0f0':'#fff'}">
+                    <div class="mono" style="font-size:12px; font-weight:900;">${i.name} [${i.status === '庫存' ? 'VAULT' : 'USING'}]</div>
+                    <div class="mono" style="font-size:9px; color:#666;">EXP: ${i.expiry || '--'}</div>
+                </div>
+            `).join('')}
+        `;
+    }
+
+  function refresh() {
+        document.getElementById('cfg-cats').value = cfg.cats;
+        document.getElementById('pick-cat').innerHTML = '<option value="">-CATEGORY-</option>' + cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+        renderVault();
+
+        // ARCHIVE_LOG 渲染
+        const archived = db.filter(i => i.status === '已用完');
+        document.getElementById('archive-list').innerHTML = `
+            <div style="border-bottom: 1px dashed #00ff00; padding-bottom: 5px; margin-bottom: 10px; opacity: 0.7;">
+                TOTAL_ARCHIVED_RECORDS: ${archived.length}
+            </div>
+            ${archived.length ? archived.map(i => `
+                <div style="margin-bottom: 4px;">
+                    <span style="opacity: 0.5;">[${i.finishDate || '0000-00-00'}]</span> 
+                    <span>${i.name}</span> 
+                    <span style="color: #666; float: right;">...OK</span>
+                </div>
+            `).join('') : '<div style="color:#444;">NO_DATA_LOGGED</div>'}
+            <div style="margin-top: 10px; color: #444; border-top: 1px solid #222; padding-top: 5px;">_EOF</div>
+        `;
+    }
+
+    function clearArchive() {
+        const archiveCount = db.filter(i => i.status === '已用完').length;
+        if (archiveCount === 0) {
+            alert("SYSTEM_REPORT: NO_ARCHIVED_DATA_FOUND.");
+            return;
+        }
+
+        if (confirm(`CRITICAL_ACTION: PURGE ${archiveCount} RECORDS?\nTHIS ACTION IS IRREVERSIBLE.`)) {
+            db = db.filter(i => i.status !== '已用完');
+            save();
+            refresh();
+            console.log("SYSTEM_LOG: ARCHIVE_PURGE_SUCCESS.");
+        }
+    }
+
+
     function updatePickSub() {
         const cat = document.getElementById('pick-cat').value;
         const subS = document.getElementById('pick-sub');
         const subs = [...new Set(db.filter(i => i.category === cat && i.status === '庫存').map(i => i.subCat))];
-        subS.innerHTML = '<option value="">--項目--</option>' + subs.map(s => `<option value="${s}">${s}</option>`).join('');
+        subS.innerHTML = '<option value="">-----</option>' + subs.map(s => `<option value="${s}">${s}</option>`).join('');
         subS.disabled = (subs.length === 0);
     }
 
-function getRecommended() {
+  function getRecommended() {
     const cat = document.getElementById('pick-cat').value;
     const sub = document.getElementById('pick-sub').value;
     const area = document.getElementById('recommend-area');
-    const today = new Date();
-
     let items = db.filter(i => i.category === cat && i.subCat === sub && i.status === '庫存');
-
-    items.sort((a, b) => {
-        const dateA = a.expiry ? new Date(a.expiry) : new Date('9999-12-31');
-        const dateB = b.expiry ? new Date(b.expiry) : new Date('9999-12-31');
-        return dateA - dateB;
-    });
-
+    items.sort((a, b) => (a.expiry || '9999').localeCompare(b.expiry || '9999'));
     const top3 = items.slice(0, 3);
-    const labelColors = ['#ff0000', '#ea7709', '#ffec00'];
-    const textColors = ['#fff', '#fff', '#fff'];
 
-    if (top3.length > 0) {
-        area.innerHTML = top3.map((i, index) => {
-            const daysLeft = i.expiry ? Math.ceil((new Date(i.expiry) - today) / (1000 * 60 * 60 * 24)) : null;
-            const expLabel = daysLeft !== null ? (daysLeft <= 0 ? "EXPIRED" : `${daysLeft}D_LEFT`) : "NO_EXPIRY";
-            const isCritical = daysLeft !== null && daysLeft <= 30;
+    // 定義工業警告色系：深紅、深橙、深黃 (用於標籤背景)
+    const labelColors = [
+        '#ff4d4d', // PICK_01: 紅 (最優先)
+        '#ffa64d', // PICK_02: 橙
+        '#ffdb4d'  // PICK_03: 黃
+    ];
 
-            return `
-                <div style="
-                    border: 1.5px solid #000; 
-                    margin-top: 25px; 
-                    background: #f4f4f4; 
-                    padding: 18px 15px 15px 15px; 
-                    position: relative;
-                    box-shadow: 4px 4px 0px #000;
-                    margin-right: 5px;
-                ">
-                    <div class="mono" style="
-                        position: absolute; 
-                        top: -12px; 
-                        left: 10px; 
-                        background: ${labelColors[index]}; 
-                        color: ${textColors[index]}; 
-                        font-size: 11px; 
-                        font-weight: 900;
-                        padding: 3px 12px;
-                        border: 1.5px solid #000;
-                        z-index: 10;
-                    ">
-                        PICK_0${index + 1}
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="flex: 1;">
-                            <div style="font-family: 'Futura', 'Trebuchet MS', Arial, sans-serif; font-weight: 800; font-size: 17px; margin-bottom: 4px; letter-spacing: -0.5px; color: #000;">
-                                ${i.name}
-                            </div>
-                            <div class="mono" style="font-size: 10px; color: ${isCritical ? '#ff0000' : '#666'};">
-                                EXP: ${i.expiry || '----/--/--'} [${expLabel}]
-                            </div>
-                        </div>
-                        
-                        <button onclick="quickUse(${i.id})" 
-                                class="mono"
-                                style="
-                                    border: none;
-                                    background: #000; 
-                                    color: #fff;
-                                    padding: 8px 16px; 
-                                    font-size: 11px; 
-                                    font-weight: 900; 
-                                    cursor: pointer; 
-                                    letter-spacing: 1px;
-                                    transition: opacity 0.2s;
-                                ">
-                            OPEN_NOW
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } else {
-        area.innerHTML = `<div class="mono" style="text-align:center; padding: 20px; color: #aaa; border: 1.5px solid #000; margin-top: 20px; background:#f4f4f4; box-shadow: 4px 4px 0px #000; margin-right:5px;">EMPTY_STOCK</div>`;
-    }
-}
+    area.innerHTML = top3.length ? top3.map((i, idx) => {
+        // 根據索引取得對應的標籤顏色，若無則預設為灰色
+        const labelBg = labelColors[idx] || '#ccc';
 
-
-    function quickUse(id) {
-        const i = db.find(x => x.id === id);
-        i.status = '使用中';
-        save(); refresh(); getRecommended();
-    }
-
-    function doCheck() {
-        const q = document.getElementById('check-input').value.toLowerCase();
-        const res = document.getElementById('check-result');
-        if(!q) { res.innerHTML = ""; return; }
-        const count = db.filter(i => i.status !== '已用完' && (i.name.toLowerCase().includes(q) || (i.tags && i.tags.toLowerCase().includes(q)))).length;
-        res.innerHTML = count > 0 ? `⚠️ 庫存：${count}` : `✅ 無庫存`;
-    }
-
-
-
-
-    function renderVault() {
-    const list = document.getElementById('vault-list');
-    // 假設 db 是你的資料庫，這裡過濾出在席庫存
-    const activeItems = db.filter(i => i.status === '庫存');
-
-    list.innerHTML = activeItems.map(i => `
+        return `
         <div style="
-            border: 1px solid #000; 
-            margin-bottom: 20px; 
-            background: #fff; 
-            padding: 15px; 
-            position: relative;
-            box-shadow: 4px 4px 0px #000; /* 延續硬陰影 */
-            margin-right: 5px;
-        ">
+            border: 2px solid #000; 
+            margin-top: 25px; 
+            margin-bottom: 25px;
+            padding: 18px; 
+            position: relative; 
+            background: #fff; /* 卡片主體維持純白 */
+            box-shadow: 6px 6px 0px #eee; /* 灰色硬陰影 */
+            transition: transform 0.1s ease-out;
+        "
+        onmouseover="this.style.transform='translate(-2px, -2px)'"
+        onmouseout="this.style.transform='translate(0px, 0px)'"
+        >
             <div class="mono" style="
                 position: absolute; 
-                top: -10px; 
-                left: 10px; 
-                background: #000; 
-                color: #fff; 
-                font-size: 10px; 
+                top: -12px; 
+                left: 12px; 
+                background: ${labelBg}; 
+                color: #000; /* 黑字壓住彩色背景 */
+                font-size: 11px; 
+                padding: 3px 10px; 
+                letter-spacing: 1px;
                 font-weight: 900;
-                padding: 2px 8px;
-                border: 1px solid #000;
             ">
-                ${i.category} / ${i.subCat}
+                PICK_0${idx+1}
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                <div style="flex: 1;">
-                    <div style="font-family: 'Courier New', Courier, monospace; font-weight: 900; font-size: 16px; color: #000; letter-spacing: -0.5px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span class="mono" style="
+                        font-size: 10px; 
+                        border: 1px solid #ccc; 
+                        padding: 1px 4px; 
+                        color: #666; 
+                        background: #f4f4f4;
+                    ">
+                        ${i.subCat}
+                    </span>
+                    <span class="mono" style="font-size: 15px; font-weight:900; color: #000; margin-left: 8px;">
                         ${i.name}
-                    </div>
-                    <div style="font-family: 'Courier New', Courier, monospace; font-size: 10px; color: #666; margin-top: 4px;">
-                        ID: ${String(i.id).padStart(4, '0')} | EXP: ${i.expiry || '----/--/--'}
+                    </span>
+                    <div class="mono" style="font-size: 9px; color: #aaa; margin-top: 5px;">
+                        > EXP: ${i.expiry || '--'}
                     </div>
                 </div>
-
-                <button onclick="useItem(${i.id})" 
-                        style="
-                            border: none;
-                            background: #000; 
-                            color: #fff;
-                            padding: 6px 12px; 
-                            font-size: 10px; 
-                            font-family: 'Impact', sans-serif;
-                            font-weight: 400; 
-                            cursor: pointer; 
-                            letter-spacing: 1px;
-                        ">
-                    MARK_USED
+                
+                <button onclick="quickUse(${i.id})" class="btn-sm" style="
+                    background: #000; 
+                    color: #fff; 
+                    border: 1px solid #000; 
+                    font-family: var(--sys-font); 
+                    font-weight: 900;
+                    letter-spacing: 1px;
+                    padding: 8px 16px;
+                ">
+                    OPEN
                 </button>
             </div>
         </div>
-    `).join('');
+    `}).join('') : `
+        <div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">
+            [ DATABASE_QUERY_EMPTY ]
+        </div>`;
 }
 
-
-    function refresh() {
-        document.getElementById('cfg-cats').value = cfg.cats;
-        document.getElementById('pick-cat').innerHTML = '<option value="">--大類--</option>' + cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
-        renderVault();
-        const archived = db.filter(i => i.status === '已用完');
-        document.getElementById('archive-list').innerHTML = `歸檔項目 (${archived.length})<br>` + archived.map(i => `• ${i.name}`).join('<br>');
-    }
-
+    function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
+    function exportDB() {
+    const dataStr = JSON.stringify({db, cfg});
+    const base64 = btoa(unescape(encodeURIComponent(dataStr))); // 轉碼以支援中文
+    document.getElementById('io-box').value = base64;
+    
+    // 自動複製
+    navigator.clipboard.writeText(base64).then(() => {
+        alert("BASE64_BACKUP_COPIED_TO_CLIPBOARD");
+    });
+}
+    function importDB() { const raw = document.getElementById('io-box').value; if(raw && confirm("OVERWRITE?")) { const p = JSON.parse(raw); db=p.db; cfg=p.cfg; save(); refresh(); } }
 
     window.onload = refresh;
-</script>
+    
+  </script>
 </body>
 </html>
