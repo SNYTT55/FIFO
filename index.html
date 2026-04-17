@@ -45,12 +45,23 @@
             background: #fff; 
             height: 40px; 
             appearance: none; 
-            -webkit-appearance: none;
-            font-family: var(--sys-font); 
-            font-weight: 900;
+            -webkit-user-select: text !important; /* 確保 iOS 允許選取與輸入 */
+            user-select: text !important;
+            background-color: #ffffff !important; 
+            -webkit-appearance: none; 
+            opacity: 1 !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important; /* 再次打擊灰字/藍字 */
+            cursor: text; /* 讓電腦端也顯示正確游標 */
         }
-        input:focus, select:focus { background: #000 !important; color: #fff !important; }
+        input[type="number"] {
+            -moz-appearance: textfield; /* 移除 Firefox 的箭頭 */
+        }
 
+        input {
+            background-image: none !important;
+            box-shadow: none !important;
+        }
         /* --- 導覽列 NAVIGATION --- */
         .nav { 
             position: fixed; 
@@ -185,10 +196,30 @@
         }
 
         /* --- 抗藍字視覺補丁 --- */
-        a[href^="tel"], a[href^="date"], .mono { 
-            color: inherit; 
-            text-decoration: none; 
-        }
+        /* 終極消滅藍字補丁 */
+            a, 
+            [href], 
+            select, 
+            input, 
+            .mono, 
+            .shelf-label,
+            .item-line span {
+                color: inherit !important;
+                text-decoration: none !important;
+                /* 下面這行是關鍵：強制 iOS 使用當前文字顏色填充，無視系統連結色彩 */
+                -webkit-text-fill-color: currentColor !important; 
+                opacity: 1 !important;
+            }
+            
+            /* 針對下拉選單 (Select) 在 iPhone 上的預設藍字 */
+            select {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                background: #fff;
+                color: #000 !important;
+                -webkit-text-fill-color: #000 !important;
+            }
     </style>
 </head>
 <body>
