@@ -3,16 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="format-detection" content="date=no">
+    <meta name="format-detection" content="address=no">
+    <meta name="format-detection" content="email=no">
     <title>RETAIL</title>
     <style>
     :root { --sys-bg: #ffffff; --sys-font: "Courier New", monospace; }
     * { box-sizing: border-box; }
     .mono { font-family: var(--sys-font); font-weight: 900; }
     body { background: var(--sys-bg); margin: 0; padding-bottom: 80px; color: #000; overflow-x: hidden; }
-    
     .page { display: none; padding: 20px; max-width: 600px; margin: auto; }
     .page.active { display: block !important; }
+
+    /* 強制覆蓋 iOS 偵測到的連結樣式 */
+    [href^="tel"], [href^="date"], a {
+        color: inherit !important;
+        text-decoration: none !important;
+        border-bottom: none !important;
+    }
     
+    /* 針對自動偵測連結的特殊偽類 */
+    :address, :date, :telephone, :email {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+        
     /* 全域輸入框樣式硬化 */
     input, select, textarea { 
         width: 100%; border: 2px solid #000; padding: 10px 8px; font-size: 14px; outline: none; border-radius: 0; 
@@ -324,15 +340,32 @@
     }
 
     function openEntry() {
-        document.getElementById('entry-overlay').style.display = 'block';
-        document.getElementById('form-title').innerText = 'NEW_ENTRY_LOG';
-        document.getElementById('edit-id').value = '';
-        document.getElementById('in-cat').innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
-        document.getElementById('in-buy').value = new Date().toISOString().split('T')[0];
-        document.getElementById('in-qty').value = 1; 
-        document.getElementById('in-qty').disabled = false;
-        ['in-sub','in-name','in-tag','in-exp','in-bar'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('entry-overlay').style.display = 'block';
+    document.getElementById('form-title').innerText = 'NEW_ENTRY_LOG';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('in-cat').innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+    
+    // 預設為當天 YYYYMMDD，觸發你的 setupDateAutoFormat
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    document.getElementById('in-buy').value = `${y}${m}${d}`;
+    
+    document.getElementById('in-qty').value = 1; 
+    document.getElementById('in-qty').disabled = false;
+    ['in-sub','in-name','in-tag','in-exp','in-bar'].forEach(id => document.getElementById(id).value = '');
+    
+    // 執行一次格式化，讓它顯示為 YYYY-MM-DD
+    formatDateElement('in-buy');
+}
+    function formatDateElement(id) {
+    const el = document.getElementById(id);
+    let val = el.value.replace(/\D/g, '');
+    if (val.length === 8) {
+        el.value = `${val.substring(0, 4)}-${val.substring(4, 6)}-${val.substring(6, 8)}`;
     }
+}
 
     function saveEntry() {
         const eid = document.getElementById('edit-id').value;
@@ -720,14 +753,18 @@ window.addEventListener('DOMContentLoaded', () => {
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
     function exportDB() {
-    const dataStr = JSON.stringify({db, cfg});
-    const base64 = btoa(unescape(encodeURIComponent(dataStr))); // 轉碼以支援中文
-    document.getElementById('io-box').value = base64;
-    
-    // 自動複製
-    navigator.clipboard.writeText(base64).then(() => {
-        alert("BASE64_BACKUP_COPIED_TO_CLIPBOARD");
-    });
+    try {
+        const dataStr = JSON.stringify({db, cfg});
+        const base64 = btoa(encodeURIComponent(dataStr).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+            return String.fromCharCode('0x' + p1);
+        }));
+        document.getElementById('io-box').value = base64;
+        navigator.clipboard.writeText(base64).then(() => {
+            alert("SYSTEM_BACKUP: SUCCESS_COPIED");
+        });
+    } catch(e) {
+        alert("EXPORT_ERROR: " + e.message);
+    }
 }
     function importDB() { const raw = document.getElementById('io-box').value; if(raw && confirm("OVERWRITE?")) { const p = JSON.parse(raw); db=p.db; cfg=p.cfg; save(); refresh(); } }
 
