@@ -9,12 +9,14 @@
     <meta name="format-detection" content="email=no">
     <title>RETAIL_V52</title>
     <style>
-        /* --- 核心系統規範 --- */
+        /* --- 核心系統規範與重置 --- */
         :root { 
             --sys-bg: #ffffff; 
             --sys-font: "Courier New", monospace; 
             --sys-accent: #00ff00;
             --sys-border: #000000;
+            --text-grey: #aaaaaa;
+            --text-active-using: #fff9c4;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -42,26 +44,24 @@
             font-size: 14px; 
             outline: none; 
             border-radius: 0; 
-            background: #fff; 
+            background-color: #ffffff !important; 
             height: 40px; 
             appearance: none; 
-            -webkit-user-select: text !important; /* 確保 iOS 允許選取與輸入 */
-            user-select: text !important;
-            background-color: #ffffff !important; 
-            -webkit-appearance: none; 
-            opacity: 1 !important;
+            -webkit-appearance: none;
+            font-family: var(--sys-font); 
+            font-weight: 900;
             color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important; /* 再次打擊灰字/藍字 */
-            cursor: text; /* 讓電腦端也顯示正確游標 */
+            -webkit-text-fill-color: #000000 !important; /* 強制黑字防藍 */
+            opacity: 1 !important; /* 確保不發灰 */
+            -webkit-user-select: text !important;
+            user-select: text !important;
         }
-        input[type="number"] {
-            -moz-appearance: textfield; /* 移除 Firefox 的箭頭 */
+        input:focus, select:focus { 
+            background-color: #000 !important; 
+            color: #fff !important; 
+            -webkit-text-fill-color: #ffffff !important; 
         }
 
-        input {
-            background-image: none !important;
-            box-shadow: none !important;
-        }
         /* --- 導覽列 NAVIGATION --- */
         .nav { 
             position: fixed; 
@@ -74,7 +74,7 @@
         }
         .nav-btn { 
             flex: 1; 
-            color: #666; 
+            color: #666 !important; /* 預設灰色看不見的問題修正 */
             display: flex; 
             align-items: center; 
             justify-content: center; 
@@ -85,9 +85,10 @@
             font-family: 'Impact', sans-serif; 
             letter-spacing: 1px;
             transition: color 0.2s;
+            -webkit-text-fill-color: initial !important; /* 解除強力填充 */
         }
         .nav-btn.active { 
-            color: #fff; 
+            color: #fff !important; 
             border-top: 4px solid var(--sys-accent); 
         }
 
@@ -103,6 +104,7 @@
             letter-spacing: 2px; 
             cursor: pointer; 
             box-shadow: 4px 4px 0px #000; 
+            -webkit-text-fill-color: initial !important;
         }
         .btn:active { transform: translate(2px, 2px); box-shadow: none; }
         
@@ -114,6 +116,7 @@
             cursor: pointer; 
             font-family: var(--sys-font); 
             font-weight: 900;
+            -webkit-text-fill-color: initial !important;
         }
 
         .btn-danger {
@@ -141,7 +144,8 @@
             top: -12px; 
             left: 12px; 
             background: #000; 
-            color: #fff; 
+            color: #fff !important; /* 圖片中黑板白字的問題修正 */
+            -webkit-text-fill-color: #ffffff !important;
             font-family: 'Impact'; 
             font-size: 14px; 
             padding: 2px 12px; 
@@ -195,45 +199,35 @@
             background-size: 100% 4px; pointer-events: none;
         }
 
-        /* --- 抗藍字視覺補丁 --- */
-        /* 終極消滅藍字補丁 */
-            a, 
-            [href], 
-            select, 
-            input, 
-            .mono, 
-            .shelf-label,
-            .item-line span {
-                color: inherit !important;
-                text-decoration: none !important;
-                /* 下面這行是關鍵：強制 iOS 使用當前文字顏色填充，無視系統連結色彩 */
-                -webkit-text-fill-color: currentColor !important; 
-                opacity: 1 !important;
-            }
-            
-            /* 針對下拉選單 (Select) 在 iPhone 上的預設藍字 */
-            select {
-                -webkit-appearance: none;
-                -moz-appearance: none;
-                appearance: none;
-                background: #fff;
-                color: #000 !important;
-                -webkit-text-fill-color: #000 !important;
-            }
+        /* --- 精準視覺修復補丁 (針對 iOS 藍字與灰色框) --- */
+        /* 只針對純文字對抗 iOS 藍字 */
+        .item-line span, 
+        .mono:not(button), 
+        #recommend-area .mono,
+        #archive-list span { 
+            color: inherit !important; 
+            text-decoration: none !important; 
+            -webkit-text-fill-color: currentColor !important;
+        }
+        
+        /* 找回 QTY 框與輸入框點擊游標 */
+        input, textarea {
+            cursor: text;
+        }
     </style>
 </head>
 <body>
 
 <div id="page-search" class="page active">
-    <h2 class="mono" style="font-size: 24px; margin-bottom: 20px;">01_SEARCH</h2>
+    <h2 class="mono" style="font-size: 24px; margin-bottom: 20px; border-bottom: 4px solid #000; padding-bottom: 10px;">01_SEARCH</h2>
     
-    <div style="background:#fff; border:2px solid #000; padding:15px; margin-bottom:25px;">
+    <div style="background:#fff; border:2px solid #000; padding:15px; margin-bottom:25px; box-shadow: 4px 4px 0px #eee;">
         <div class="mono" style="font-size: 11px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">DATABASE_QUERY</div>
         <input type="text" id="check-input" placeholder="INPUT_KEYWORDS..." oninput="doCheck()">
         <div id="check-result" class="mono" style="font-size: 12px; margin-top: 10px; min-height: 18px;"></div>
     </div>
 
-    <div style="background:#f4f4f4; border:2px solid #000; padding:15px;">
+    <div style="background:#f4f4f4; border:2px solid #000; padding:15px; box-shadow: 4px 4px 0px #eee;">
         <div class="mono" style="font-size: 11px; background: #000; color: #fff; display: inline-block; padding: 2px 10px; letter-spacing: 2px; margin-bottom: 15px;">AUTO_RECOMMEND</div>
         <div class="form-row" style="margin-bottom: 15px;">
             <select id="pick-cat" onchange="updatePickSub()"></select>
@@ -485,11 +479,11 @@
         const vCount = matches.filter(i => i.status === '庫存').length;
         const uCount = matches.filter(i => i.status === '使用中').length;
         res.innerHTML = `
-            <div style="background:#000; color:#fff; padding:10px; margin:10px 0;">VAULT: ${vCount} | USING: ${uCount}</div>
+            <div style="background:#000; color:#fff; padding:10px; margin:10px 0; border:2px solid #fff;">VAULT: ${vCount} | USING: ${uCount}</div>
             ${matches.map(i => `
-                <div style="border:1px solid #000; padding:8px; margin-bottom:5px; background:${i.barcode && i.barcode.endsWith(q)?'#fff0f0':'#fff'}">
+                <div style="border:1px solid #000; padding:10px; margin-bottom:5px; background:${i.barcode && i.barcode.endsWith(q)?'#fff0f0':'#fff'}">
                     <div class="mono" style="font-size:12px; font-weight:900;">${i.name} [${i.status === '庫存' ? 'VAULT' : 'USING'}]</div>
-                    <div class="mono" style="font-size:9px; color:#666;">EXP: ${i.expiry || '--'}</div>
+                    <div class="mono" style="font-size:9px; color:#666; margin-top: 4px;">EXP: ${i.expiry || '--'}</div>
                 </div>
             `).join('')}
         `;
@@ -509,19 +503,19 @@
         if (usingItems.length > 0) {
             usingSection = `
                 <div class="shelf-container" style="background: #fff9c4; box-shadow: 4px 4px 0px #000;">
-                    <div class="shelf-label">ACTIVE_USING_LOG</div>
+                    <div class="shelf-label" style="background: #000; color: #fff9c4; -webkit-text-fill-color: #fff9c4 !important;">ACTIVE_USING_LOG</div>
                     <div style="padding: 25px 12px 10px 12px;">
                         ${usingItems.map(i => {
                             const days = i.openDate ? Math.floor((new Date() - new Date(i.openDate)) / (1000 * 60 * 60 * 24)) : 0;
                             return `
-                            <div class="item-line">
+                            <div class="item-line" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
                                 <div style="flex: 1;">
                                     <span class="mono" style="font-size:10px; border:1px solid #000; padding:0 4px; background:#000; color:#fff;">${i.subCat}</span>
                                     <span class="mono" style="font-size:14px; margin-left:8px; font-weight:900;">${i.name}</span>
                                     <div class="mono" style="font-size:9px; color:#666; margin-top:4px;">> OPEN: ${i.openDate} (${days}D)</div>
                                 </div>
                                 <div style="display: flex; gap: 4px;">
-                                    <button onclick="editItem(${i.id})" class="btn-sm">EDIT</button>
+                                    <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0000ff !important; border-color:#0000ff !important;">EDIT</button>
                                     <button onclick="finishItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">OFF</button>
                                 </div>
                             </div>`;
@@ -543,11 +537,11 @@
                                         <div style="flex: 1;">
                                             <span class="mono" style="font-size:10px; border:1px solid #ccc; padding:0 4px; color:#666;">${i.subCat}</span>
                                             <span class="mono" style="font-size:14px; margin-left:8px; font-weight:900;">${i.name}</span>
-                                            <div class="mono" style="font-size:9px; color:#aaa; margin-top:4px;">EXP: ${i.expiry || '--'}</div>
+                                            <div class="mono" style="font-size:9px; color:#aaaaaa; margin-top:4px;">EXP: ${i.expiry || '--'}</div>
                                         </div>
                                         <div style="display: flex; gap: 4px;">
-                                            <button onclick="editItem(${i.id})" class="btn-sm">EDIT</button>
-                                            <button onclick="deleteItem(${i.id})" class="btn-sm" style="color:red; border-color:red;">DEL</button>
+                                            <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0000ff !important; border-color:#0000ff !important;">EDIT</button>
+                                            <button onclick="deleteItem(${i.id})" class="btn-sm" style="color:#ff0000 !important; border-color:#ff0000 !important;">DEL</button>
                                             <button onclick="useItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">ON</button>
                                         </div>
                                     </div>`).join('')}
@@ -596,7 +590,7 @@
         const labelColors = ['#ff4d4d', '#ffa64d', '#ffdb4d'];
         area.innerHTML = top3.length ? top3.map((i, idx) => `
             <div style="border: 2px solid #000; margin: 25px 0; padding: 18px; position: relative; background: #fff; box-shadow: 6px 6px 0px #eee;">
-                <div class="mono" style="position: absolute; top: -12px; left: 12px; background: ${labelColors[idx] || '#ccc'}; color: #000; font-size: 11px; padding: 3px 10px; font-weight: 900;">PICK_0${idx+1}</div>
+                <div class="mono" style="position: absolute; top: -12px; left: 12px; background: ${labelColors[idx] || '#ccc'}; color: #000; -webkit-text-fill-color: #000000 !important; font-size: 11px; padding: 3px 10px; font-weight: 900; border: 1px solid #000;">PICK_0${idx+1}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <span class="mono" style="font-size: 10px; border: 1px solid #ccc; padding: 1px 4px; color: #666; background: #f4f4f4;">${i.subCat}</span>
