@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RETAIL_PRO_V5.0</title>
+    <title>RETAIL_PRO_V5.1</title>
     <style>
         :root { --sys-bg: #ffffff; --sys-font: "Courier New", monospace; }
         * { box-sizing: border-box; font-family: -apple-system, "Noto Sans TC", sans-serif; }
@@ -13,25 +13,25 @@
         .page { display: none; padding: 20px; max-width: 600px; margin: auto; }
         .page.active { display: block !important; }
         
-        /* 表單格點系統 */
+        /* 表單佈局 */
         .form-row { display: flex; gap: 8px; margin-bottom: 12px; }
         .flex-1 { flex: 1; }
         .flex-4 { flex: 4; }
         .flex-6 { flex: 6; }
         
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #666; font-family: var(--sys-font); }
+        .form-group label { font-size: 10px; font-weight: bold; margin-bottom: 4px; color: #666; }
         
         input, select { 
             width: 100%; border: 2px solid #000; padding: 10px 8px; font-size: 15px; outline: none; border-radius: 0; 
-            background: #fff; height: 45px;
+            background: #fff; height: 45px; appearance: none; -webkit-appearance: none;
         }
         input:focus { background: #f0f7ff; border-color: #0044cc; }
 
-        /* 導覽與按鈕 */
+        /* 導覽列 */
         .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; height: 65px; z-index: 999; }
-        .nav-btn { flex: 1; color: #666; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; }
-        .nav-btn.active { color: #fff; border-top: 4px solid #00ff00; }
+        .nav-btn { flex: 1; color: #666; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border: none; background: none; }
+        .nav-btn.active { color: #fff; border-top: 4px solid #00ff00; background: #111; }
         
         .btn { background: #000; color: #fff; border: none; padding: 15px; font-size: 14px; width: 100%; font-weight: bold; }
         .btn-sm { padding: 6px 10px; font-size: 11px; border: 1.5px solid #000; font-weight: bold; background: #fff; }
@@ -47,7 +47,7 @@
 <div id="page-search" class="page active">
     <h2 class="mono">01_SEARCH</h2>
     <div style="border:2px solid #000; padding:15px; margin-bottom:15px;">
-        <input type="text" id="check-input" placeholder="快速查庫存..." oninput="doCheck()">
+        <input type="text" id="check-input" placeholder="查庫存或標籤..." oninput="doCheck()">
         <div id="check-result" style="margin-top:5px; font-weight:bold;"></div>
     </div>
     <div style="background:#f9f9f9; border:2px solid #000; padding:15px;">
@@ -70,8 +70,11 @@
 
 <div id="page-sys" class="page">
     <h2 class="mono">03_SYSTEM</h2>
-    <input type="text" id="cfg-cats" onchange="saveCfg()" placeholder="大類別(用逗號隔開)">
-    <div id="archive-list" style="margin-top:20px; font-size:12px; color:#999;"></div>
+    <div style="margin-bottom:20px;">
+        <label class="mono" style="font-size:10px;">分類定義(逗號隔開)</label>
+        <input type="text" id="cfg-cats" onchange="saveCfg()">
+    </div>
+    <div id="archive-list" style="font-size:12px; color:#999; border-top:1px solid #eee; padding-top:10px;"></div>
 </div>
 
 <div id="entry-overlay">
@@ -80,20 +83,16 @@
     
     <div class="form-row">
         <div class="form-group flex-1"><label>CAT</label><select id="in-cat"></select></div>
-        <div class="form-group flex-1"><label>SUB_CAT</label><input type="text" id="in-sub" placeholder="子類"></div>
+        <div class="form-group flex-1"><label>SUB_CAT</label><input type="text" id="in-sub"></div>
         <div class="form-group flex-1">
             <label>STATUS</label>
-            <select id="in-status">
-                <option value="庫存">庫存</option>
-                <option value="使用中">使用中</option>
-                <option value="已用完">已用完</option>
-            </select>
+            <select id="in-status"><option value="庫存">庫存</option><option value="使用中">使用中</option><option value="已用完">已用完</option></select>
         </div>
     </div>
 
     <div class="form-row">
-        <div class="form-group flex-6"><label>PRODUCT_NAME</label><input type="text" id="in-name" placeholder="完整品名"></div>
-        <div class="form-group flex-4"><label>TAGS</label><input type="text" id="in-tag" placeholder="#系列"></div>
+        <div class="form-group flex-6"><label>PRODUCT_NAME</label><input type="text" id="in-name"></div>
+        <div class="form-group flex-4"><label>TAGS</label><input type="text" id="in-tag"></div>
     </div>
 
     <div class="form-row">
@@ -102,12 +101,12 @@
     </div>
 
     <div class="form-row">
-        <div class="form-group flex-1"><label>BARCODE</label><input type="text" id="in-bar" placeholder="條碼"></div>
+        <div class="form-group flex-1"><label>BARCODE</label><input type="text" id="in-bar"></div>
         <div class="form-group flex-1"><label>BATCH_QTY (包數)</label><input type="number" id="in-qty" value="1" min="1"></div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:30px;">
-        <button class="btn" style="background:#ccc; color:#000; flex:1;" onclick="closeEntry()">CANCEL</button>
+        <button class="btn" style="background:#eee; color:#000; flex:1;" onclick="closeEntry()">CANCEL</button>
         <button class="btn" style="flex:2;" onclick="saveEntry()">CONFIRM_SAVE</button>
     </div>
 </div>
@@ -119,10 +118,16 @@
 </nav>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('retail_v5_db') || '[]');
-    let cfg = JSON.parse(localStorage.getItem('retail_v5_cfg') || '{"cats":"保養品,家用品,食品"}');
+    // 資料初始化
+    let db = JSON.parse(localStorage.getItem('retail_v51_db') || '[]');
+    let cfg = JSON.parse(localStorage.getItem('retail_v51_cfg') || '{"cats":"保養品,家用品,食品"}');
 
-    function save() { localStorage.setItem('retail_v5_db', JSON.stringify(db)); localStorage.setItem('retail_v5_cfg', JSON.stringify(cfg)); }
+    function save() { 
+        localStorage.setItem('retail_v51_db', JSON.stringify(db)); 
+        localStorage.setItem('retail_v51_cfg', JSON.stringify(cfg)); 
+    }
+
+    // 頁面切換核心函式
     function tab(id, el) { 
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
@@ -131,14 +136,14 @@
         refresh(); 
     }
 
-    // --- 批量新增邏輯 ---
+    // --- 表單邏輯 ---
     function openEntry() {
         document.getElementById('entry-overlay').style.display = 'block';
         document.getElementById('form-title').innerText = 'NEW_ENTRY';
         document.getElementById('edit-id').value = '';
         document.getElementById('in-cat').innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
         document.getElementById('in-buy').value = new Date().toISOString().split('T')[0];
-        document.getElementById('in-qty').value = 1; // 預設 1 包
+        document.getElementById('in-qty').value = 1; 
         document.getElementById('in-qty').disabled = false;
         ['in-sub','in-name','in-tag','in-exp','in-bar'].forEach(id => document.getElementById(id).value = '');
     }
@@ -156,8 +161,7 @@
         document.getElementById('in-exp').value = i.expiry || '';
         document.getElementById('in-bar').value = i.barcode || '';
         document.getElementById('in-status').value = i.status;
-        document.getElementById('in-qty').value = 1; 
-        document.getElementById('in-qty').disabled = true; // 編輯模式不支援批量複製
+        document.getElementById('in-qty').disabled = true;
     }
 
     function saveEntry() {
@@ -166,7 +170,7 @@
         const name = document.getElementById('in-name').value;
         if(!name) return alert("請輸入品名");
 
-        const baseData = {
+        const data = {
             category: document.getElementById('in-cat').value,
             subCat: document.getElementById('in-sub').value || "未分類",
             name: name,
@@ -178,45 +182,73 @@
         };
 
         if(eid) {
-            // 編輯模式
             const idx = db.findIndex(x => x.id == eid);
-            db[idx] = {...db[idx], ...baseData};
+            db[idx] = {...db[idx], ...data};
         } else {
-            // 新增模式：根據包數批量複製
             for(let i=0; i<qty; i++) {
-                db.push({ ...baseData, id: Date.now() + i });
+                db.push({ ...data, id: Date.now() + i });
             }
         }
-        
         save(); closeEntry(); refresh();
     }
 
-    // --- 其他渲染邏輯 ---
+    function closeEntry() { document.getElementById('entry-overlay').style.display = 'none'; }
+
+    // --- 搜尋與推薦 ---
+    function updatePickSub() {
+        const cat = document.getElementById('pick-cat').value;
+        const subS = document.getElementById('pick-sub');
+        const subs = [...new Set(db.filter(i => i.category === cat && i.status === '庫存').map(i => i.subCat))];
+        subS.innerHTML = '<option value="">--項目--</option>' + subs.map(s => `<option value="${s}">${s}</option>`).join('');
+        subS.disabled = (subs.length === 0);
+    }
+
+    function getRecommended() {
+        const cat = document.getElementById('pick-cat').value;
+        const sub = document.getElementById('pick-sub').value;
+        const area = document.getElementById('recommend-area');
+        let items = db.filter(i => i.category === cat && i.subCat === sub && i.status === '庫存');
+        items.sort((a,b) => (a.expiry || '9999') > (b.expiry || '9999') ? 1 : -1);
+        if(items.length) {
+            const i = items[0];
+            area.innerHTML = `<div style="border:4px solid #000; padding:15px; margin-top:15px; background:#fff;"><b>${i.name}</b><br><small>${i.tags}</small><button class="btn" style="margin-top:10px; background:blue;" onclick="quickUse(${i.id})">開啟使用</button></div>`;
+        } else { area.innerHTML = ""; }
+    }
+
+    function quickUse(id) {
+        const i = db.find(x => x.id === id);
+        i.status = '使用中';
+        save(); refresh(); getRecommended();
+    }
+
+    function doCheck() {
+        const q = document.getElementById('check-input').value.toLowerCase();
+        const res = document.getElementById('check-result');
+        if(!q) { res.innerHTML = ""; return; }
+        const count = db.filter(i => i.status !== '已用完' && (i.name.toLowerCase().includes(q) || (i.tags && i.tags.toLowerCase().includes(q)))).length;
+        res.innerHTML = count > 0 ? `⚠️ 庫存：${count}` : `✅ 無庫存`;
+    }
+
+    // --- 系統渲染 ---
     function renderVault() {
         const list = document.getElementById('vault-list');
-        list.innerHTML = db.filter(i => i.status !== '已用完').map(i => `
+        list.innerHTML = db.filter(i => i.status !== '已_用完').map(i => `
             <div class="item-card">
-                <div style="flex:1;">
-                    <span class="mono" style="font-size:9px; border:1px solid #000; padding:1px 4px;">${i.status}</span>
-                    <b style="font-size:15px; display:block; margin-top:4px;">${i.name}</b>
-                    <div style="margin-top:4px;">${(i.tags || "").split(' ').map(t => t?`<span class="tag-pill">${t}</span>`:'').join('')}</div>
-                </div>
+                <div><span class="mono" style="font-size:9px; border:1px solid #000; padding:1px 4px;">${i.status}</span><br><b>${i.name}</b></div>
                 <button class="btn-sm mono" onclick="editItem(${i.id})">EDIT</button>
             </div>`).join('');
     }
 
-    function closeEntry() { document.getElementById('entry-overlay').style.display = 'none'; }
     function refresh() {
         document.getElementById('cfg-cats').value = cfg.cats;
         document.getElementById('pick-cat').innerHTML = '<option value="">--大類--</option>' + cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
         renderVault();
+        document.getElementById('archive-list').innerHTML = "歸檔項目：" + db.filter(i => i.status === '已用完').length;
     }
 
-    // 搜尋與推薦邏輯保持 V4.9...
-    window.onload = refresh;
-    function tab(id, el) { /* 頁面切換 */ }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
-    function doCheck() { /* 查重邏輯 */ }
+
+    window.onload = refresh;
 </script>
 </body>
 </html>
