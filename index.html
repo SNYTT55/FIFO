@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <link rel="apple-touch-icon" href="icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
     <meta name="format-detection" content="date=no">
     <meta name="format-detection" content="address=no">
     <meta name="format-detection" content="email=no">
-    <title>RETAIL</title>
+    <title>🗂️FILE</title>
     <style>
         /* --- 1. 核心系統規範與重置 --- */
         :root { 
@@ -29,12 +30,17 @@
             padding-bottom: 90px; 
             color: #000; 
             overflow-x: hidden;
-            font-family: var(--sys-font);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.01em;
         }
 
         /* 強調字體類別 */
-        .mono { font-weight: 900; }
+       .mono { 
+            /* 只有數字、編號、或是標籤才用等寬字體 */
+            font-family: "SF Mono", "Roboto Mono", Menlo, monospace; 
+            font-weight: 700;
+        }
 
         /* --- 2. 頁面佈局組件 --- */
         .page { 
@@ -401,21 +407,29 @@
     </div>
 
     <div class="shelf-container" style="background: #fdfdfb; border-style: dashed;">
-        <div class="shelf-label">CONFIG_PROTOCOL</div>
-        <input type="text" id="cfg-cats" onchange="saveCfg()" style="background:#f4f4f4; margin-top: 10px;">
+        <div class="shelf-label">CAT_PROTOCOL</div>
+        <div style="margin-top: 10px;">
+            <label class="mono" style="font-size: 9px; color: #888;">GLOBAL_CATEGORY_LIST</label>
+            <input type="text" id="cfg-cats" onchange="saveCfg()" style="background:#f4f4f4; margin-top: 5px;">
+        </div>
+    </div>
+
+    <div class="shelf-container" style="background: #fdfdfb; border-style: dashed;">
+        <div class="shelf-label">SUB_CAT_PROTOCOL</div>
+        <div style="margin-top: 10px;">
+            <label class="mono" style="font-size: 9px; color: #888;">GLOBAL_SUB_LIST</label>
+            <textarea id="cfg-sub-cats" onchange="saveCfg()" style="width:100%; height:80px; background:#f4f4f4; margin-top: 5px; border:2px solid #000; padding:8px; font-family:var(--sys-font); font-size:12px;"></textarea>
+            <div class="mono" style="font-size: 8px; color: #ccc; margin-top: 5px; letter-spacing: 1px;">
+                * MANUAL_OVERRIDE: 刪除此處文字即可從下拉選單移除
+            </div>
+        </div>
     </div>
 
     <div class="shelf-container" style="background: #fdfdfb; border-style: dashed;">
         <div class="shelf-label">SYSTEM_DATA_MANAGEMENT</div>
-        
         <div style="display: flex; gap: 15px; margin-top: 10px;">
-            <button onclick="exportDataToFile()" class="btn-system-action">
-                [EXPORT_DATABASE]
-            </button>
-            
-            <label for="import-file" class="btn-system-action" style="cursor: pointer; text-align: center;">
-                [IMPORT_PROTOCOL]
-            </label>
+            <button onclick="exportDataToFile()" class="btn-system-action">[EXPORT_DATABASE]</button>
+            <label for="import-file" class="btn-system-action" style="cursor: pointer; text-align: center;">[IMPORT_PROTOCOL]</label>
             <input type="file" id="import-file" style="display: none;" onchange="importDataFromFile(event)">
         </div>
         
@@ -438,8 +452,8 @@
     </div>
     <input type="hidden" id="edit-id">
     <div class="form-row">
-        <div class="form-group"><label>CATEGORY</label><select id="in-cat"></select></div>
-        <div class="form-group"><label>SUB_CAT</label><input type="text" id="in-sub"></div>
+        <div class="form-group"><label>CATEGORY</label><select id="in-cat" onchange="updateInSubOptions()"></select></div>
+        <div class="form-group"><label>SUB_CAT</label><select id="in-sub"><option value="未分類">----</option></select></div>
         <div class="form-group"><label>STATUS</label><select id="in-status"><option value="庫存">STOCK</option><option value="使用中">USING</option></select></div>
     </div>
     <div class="form-row">
@@ -468,28 +482,110 @@
 </nav>
 
 <script>
-    // --- 邏輯部分保持不變 ---
-    let db = JSON.parse(localStorage.getItem('retail_v52_db') || '[]');
-    let cfg = JSON.parse(localStorage.getItem('retail_v52_cfg') || '{"cats":"護膚產品,頭髮產品,身體保養,家用清潔"}');
+// 建議直接這樣寫，全域通用
+    const STORE_DB = 'sss_db'; 
+    const STORE_CFG = 'sss_cfg';
 
-    function save() { 
-        localStorage.setItem('retail_v52_db', JSON.stringify(db)); 
-        localStorage.setItem('retail_v52_cfg', JSON.stringify(cfg)); 
+    let db = JSON.parse(localStorage.getItem(STORE_DB) || '[]');
+    let cfg = JSON.parse(localStorage.getItem(STORE_CFG) || '{"cats":"...","subCats":"..."}');
+
+    // --- 2. 整合後的子分類生成邏輯 (唯一版本) ---
+    function updateSubCatSuggestions() {
+        const el = document.getElementById('in-sub');
+        if (!el) return;
+
+        // A. 基礎保底分類 + 資料庫現有分類
+        const base = ["洗髮", "護髮", "沐浴", "臉部清潔", "精華液", "乳液", "58飼料"];
+        const existing = [...new Set(db.map(i => i.subCat).filter(s => s))];
+        
+        // B. 從 SYSTEM 設定區抓取的自定義分類
+        let manual = [];
+        if (cfg.subCats) {
+            manual = cfg.subCats.split(',').map(s => s.trim());
+        }
+
+        // C. 全部聯集去重
+        const all = [...new Set([...base, ...manual, ...existing])].filter(s => s && s !== "未分類");
+
+        el.innerHTML = `<option value="未分類">----</option>` + 
+                    all.sort().map(c => `<option value="${c}">${c}</option>`).join('');
     }
+    
+    function save() { 
+        localStorage.setItem(STORE_DB, JSON.stringify(db)); 
+        localStorage.setItem(STORE_CFG, JSON.stringify(cfg)); 
+    }
+
+    function saveCfg() {
+        const catInput = document.getElementById('cfg-cats');
+        const subInput = document.getElementById('cfg-sub-cats');
+        
+        if (catInput) cfg.cats = catInput.value;
+        if (subInput) cfg.subCats = subInput.value;
+        
+        save(); 
+        refresh();
+        updateSubCatSuggestions(); // 立即同步下拉選單
+        console.log("PROTOCOL_CONFIG_SAVED");
+    }
+
+    function updateInSubOptions() {
+    const cat = document.getElementById('in-cat').value;
+    const subEl = document.getElementById('in-sub');
+    if (!subEl) return;
+
+    // 1. 從 db 找出這個大類曾經用過的子分類
+    const existingSubs = [...new Set(
+        db.filter(i => i.category === cat).map(i => i.subCat)
+    )].filter(s => s && s !== "未分類");
+
+    // 2. 取得系統設定 (cfg) 中的所有子分類作為備選
+    let cfgSubs = [];
+    if (cfg.subCats) {
+        cfgSubs = cfg.subCats.split(',').map(s => s.trim());
+    }
+
+    // 3. 智慧交集：如果該子分類在 db 中屬於這個大類，或者是完全沒被用過的新分類
+    // 這裡我們簡化邏輯：優先顯示該大類下「已存在」的子類
+    const finalOptions = existingSubs.length > 0 ? existingSubs : cfgSubs;
+
+    subEl.innerHTML = `<option value="未分類">----</option>` + 
+        finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+    
+}    
 
     function tab(id, el) { 
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
         document.getElementById(id).classList.add('active'); 
         el.classList.add('active'); 
+
+        // 如果切換到系統頁面，填入對應的設定值
+        if (id === 'page-sys') {
+            document.getElementById('cfg-cats').value = cfg.cats || "";
+            const subInput = document.getElementById('cfg-sub-cats');
+            if (subInput) subInput.value = cfg.subCats || "";
+        }
         refresh(); 
     }
 
     function openEntry() {
-        document.getElementById('entry-overlay').style.display = 'block';
+        // 1. 先顯示遮罩
+        const overlay = document.getElementById('entry-overlay');
+        if (overlay) overlay.style.display = 'block';
+        
         document.getElementById('form-title').innerText = 'NEW_ENTRY_LOG';
         document.getElementById('edit-id').value = '';
-        document.getElementById('in-cat').innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+
+        // 2. 處理分類 (Category)
+        const inCat = document.getElementById('in-cat');
+        if (inCat && cfg.cats) {
+            inCat.innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+            // 執行連動
+            updateInSubOptions();
+        }
+
+        // 3. 設定預設日期與數量
         const today = new Date();
         const y = today.getFullYear();
         const m = String(today.getMonth() + 1).padStart(2, '0');
@@ -497,9 +593,24 @@
         document.getElementById('in-buy').value = `${y}${m}${d}`;
         document.getElementById('in-qty').value = 1; 
         document.getElementById('in-qty').disabled = false;
-        ['in-sub','in-name','in-tag','in-exp','in-bar'].forEach(id => document.getElementById(id).value = '');
+
+        // 4. 清空輸入框 (排除 select 物件)
+        // 我們把 in-sub 拿掉，改單獨處理
+        ['in-name','in-tag','in-exp','in-bar'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        // 5. 更新子分類下拉選單
+        updateSubCatSuggestions();
+
+        // 6. 強制將子分類歸位到第一個選項
+        const inSub = document.getElementById('in-sub');
+        if (inSub) inSub.selectedIndex = 0;
+
         formatDateElement('in-buy');
     }
+
 
     function autoFormatDate(inputVal) {
         let val = inputVal.replace(/\D/g, ''); // 只留數字
@@ -514,35 +625,42 @@
         const qty = parseInt(document.getElementById('in-qty').value) || 1;
         const baseName = document.getElementById('in-name').value;
         if(!baseName) return alert("MISSING_NAME");
-
+        const newItem = {
+            id: String(Date.now()), // 關鍵：強制轉為字串
+            name: baseName,
+            // ... 其他欄位
+        };
         // --- 核心改動：日期格式化邏輯 ---
-        const formatInputDate = (val) => {
-            let clean = val.replace(/\D/g, ''); // 只留數字
+        const toStandardDate = (val) => {
+            let clean = val.replace(/\D/g, ''); // 移除所有非數字
             if (clean.length === 8) {
-                return clean.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+                return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
             }
-            return val; // 如果長度不是8（可能已經有橫線或沒填），就回傳原值
+            return val; // 如果不是8碼（可能已經是 YYYY-MM-DD），就維持原樣
         };
         const data = {
-            category: document.getElementById('in-cat').value,
-            subCat: document.getElementById('in-sub').value || "未分類",
-            tags: document.getElementById('in-tag').value,
-            buyDate: document.getElementById('in-buy').value,
-            expiry: document.getElementById('in-exp').value,
-            barcode: document.getElementById('in-bar').value,
-            status: document.getElementById('in-status').value
-        };
-        if(eid) {
-            const idx = db.findIndex(x => x.id == eid);
-            if(idx !== -1) db[idx] = { ...db[idx], ...data, name: baseName };
-        } else {
-            for(let i=0; i<qty; i++) {
-                const newName = qty > 1 ? `${baseName} (${i+1}/${qty})` : baseName;
-                db.push({ id: Date.now() + i, name: newName, ...data });
-            }
+        category: document.getElementById('in-cat').value,
+        subCat: document.getElementById('in-sub').value || "未分類",
+        tags: document.getElementById('in-tag').value,
+        // 儲存前強制格式化
+        buyDate: toStandardDate(document.getElementById('in-buy').value),
+        expiry: toStandardDate(document.getElementById('in-exp').value),
+        barcode: document.getElementById('in-bar').value,
+        status: document.getElementById('in-status').value
+    };
+
+    if(eid) {
+        const idx = db.findIndex(x => x.id == eid);
+        if(idx !== -1) db[idx] = { ...db[idx], ...data, name: baseName };
+    } else {
+        for(let i=0; i<qty; i++) {
+            const newName = qty > 1 ? `${baseName} (${i+1}/${qty})` : baseName;
+            // 確保新生成的 ID 也是字串格式，方便後續比對
+            db.push({ id: String(Date.now() + i), name: newName, ...data });
         }
-        save(); closeEntry(); refresh();
     }
+    save(); closeEntry(); refresh();
+}
 
     function closeEntry() { document.getElementById('entry-overlay').style.display = 'none'; }
 
@@ -581,9 +699,15 @@
 }
 
     function deleteItem(id) {
+        // 增加一個 console log 幫助你抓蟲，如果按下沒反應，看控制台 (F12) 這裡有沒有印出來
+        console.log("正在刪除 ID:", id);
+
         if(confirm("CONFIRM_PERMANENT_DELETION?")) {
-            db = db.filter(x => x.id !== id);
-            save(); refresh();
+            // 使用 != 而不是 !==，確保型別不同也能正確過濾
+            db = db.filter(x => x.id != id); 
+            
+            save();    // 儲存回 localStorage
+            refresh(); // 重新渲染畫面
         }
     }
 
@@ -595,82 +719,140 @@
     }
 
     function useItem(id) {
-        const i = db.find(x => x.id === id);
-        if(i) { i.status = '使用中'; i.openDate = new Date().toISOString().split('T')[0]; save(); refresh(); }
+        // 1. 使用 == 確保匹配字串或數字 ID
+        const i = db.find(x => x.id == id);
+        if (!i) return;
+
+        // 2. 執行開啟邏輯
+        i.status = '使用中';
+        i.openDate = new Date().toISOString().split('T')[0];
+        save();
+        refresh();
+
+        // 3. 聯動提醒邏輯：針對頭髮產品
+        // 假設你的分類名稱包含「頭髮」或「洗髮」
+        if (i.category.includes('頭髮') || i.subCat.includes('洗髮')) {
+            
+            // 搜尋同分類下，還在「庫存」的護髮產品
+            const related = db.filter(item => 
+                item.id != id && 
+                item.status === '庫存' && 
+                (item.subCat.includes('護髮') || item.subCat.includes('潤髮') || item.subCat.includes('髮膜'))
+            );
+
+            if (related.length > 0) {
+                // 找出最適合搭配的（優先找名稱裡有相似關鍵字的，例如同系列名）
+                const suggestions = related.map(r => `• ${r.name}`).join('\n');
+                
+                // 使用工業風的提醒視窗
+                setTimeout(() => {
+                    alert(`[ PROTOCOL_REMINDER ]\n\n偵測到您開啟了洗髮產品。\n庫存中還有相關配套：\n${suggestions}\n\n建議同步取出使用以達最佳效果。`);
+                }, 300);
+            }
+        }
     }
 
-    function setupDateAutoFormat(elementId) {
-        const el = document.getElementById(elementId);
-        el.addEventListener('input', (e) => {
-            let val = e.target.value.replace(/\D/g, '');
-            if (val.length > 8) val = val.slice(0, 8);
-            if (val.length === 8) {
-                e.target.value = `${val.substring(0, 4)}-${val.substring(4, 6)}-${val.substring(6, 8)}`;
-            } else { e.target.value = val; }
-        });
-        el.addEventListener('blur', (e) => {
-            const regex = /^\d{4}-\d{2}-\d{2}$/;
-            if (e.target.value && !regex.test(e.target.value)) { alert("DATE_FORMAT_ERROR"); e.target.value = ""; }
-        });
-    }
+    function setupDateAutoFormat(elementId) {   
+    const el = document.getElementById(elementId);
+    el.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/\D/g, '');
+        if (val.length > 8) val = val.slice(0, 8);
+        
+        // 當使用者輸入滿 8 碼時，即時顯示橫線給他們看
+        if (val.length === 8) {
+            e.target.value = `${val.substring(0, 4)}-${val.substring(4, 6)}-${val.substring(6, 8)}`;
+        }
+    });
+}
 
     function doCheck() {
     const q = document.getElementById('check-input').value.trim().toLowerCase();
     const res = document.getElementById('check-result');
     if(!q) { res.innerHTML = ""; return; }
     
-    // 優先過濾掉「已用完」的，僅搜尋現有物資
-    const matches = db.filter(i => i.status !== '已用完' && (
-        (i.barcode && i.barcode.includes(q)) || 
-        i.name.toLowerCase().includes(q) ||
-        (i.tags && i.tags.toLowerCase().includes(q)) ||
-        i.subCat.toLowerCase().includes(q)
-    ));
+    // 1. 核心過濾：找出未用完的項目
+    const activeItems = db.filter(i => i.status !== '已用完');
 
+    // 2. 第一層搜尋：精確匹配名稱、條碼、標籤
+    let matches = activeItems.filter(i => {
+        const s = (field) => (i[field] || "").toLowerCase();
+        return s('name').includes(q) || s('barcode').includes(q) || s('tags').includes(q) || s('subCat').includes(q);
+    });
+
+    let isDiscoveryMode = false;
+
+    // 3. 第二層搜尋：如果第一層沒中，嘗試「分類聯想」
     if (matches.length === 0) {
-        res.innerHTML = `<div style="color:#ff0000; padding:15px; border:1px dashed #000; margin-top:10px; font-size:10px;">[ STATUS: NO_MATCH_FOUND ]</div>`;
+        matches = activeItems.filter(i => {
+            const s = (field) => (i[field] || "").toLowerCase();
+            return s('subCat').includes(q) || s('category').includes(q);
+        });
+        if (matches.length > 0) isDiscoveryMode = true;
+    }
+
+    // 4. 完全沒找到
+    if (matches.length === 0) {
+        res.innerHTML = `<div style="color:#ff0000; padding:15px; border:1px dashed #000; margin-top:10px; font-size:10px; background:#fff;">[ STATUS: NO_MATCH_FOUND_IN_VAULT ]</div>`;
         return;
     }
 
     const vCount = matches.filter(i => i.status === '庫存').length;
     const uCount = matches.filter(i => i.status === '使用中').length;
     
+    // 5. 渲染看板 (根據是否為聯想模式切換顏色)
+    const boardBg = isDiscoveryMode ? '#ff9800' : '#000'; // 聯想模式用橘色提醒
+    const boardTitle = isDiscoveryMode ? 'CATEGORY_MATCHED' : 'DATABASE_CHECK';
+    const mainCountLabel = isDiscoveryMode ? `SIMILAR: ${matches.length}` : `MATCHED: ${matches.length}`;
+
     res.innerHTML = `
-        <div style="background:#000; color:#fff; padding:8px 12px; margin:10px 0; font-size:11px;">MATCH_FOUND: ${matches.length} (STOCK:${vCount} / USING:${uCount})</div>
-        <div style="max-height: 300px; overflow-y: auto;">
+        <div style="background:${boardBg}; color:${isDiscoveryMode ? '#000' : '#fff'}; padding:15px; margin:10px 0 20px 0; display:flex; justify-content:space-between; align-items:center; box-shadow: 6px 6px 0px #eee;">
+            <div class="mono" style="line-height:1;">
+                <div style="font-size: 10px; opacity: 0.6; margin-bottom: 5px;">${boardTitle}</div>
+                <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">
+                    ${mainCountLabel}
+                </div>
+            </div>
+            <div class="mono" style="text-align:right; font-size: 10px; opacity: 0.8;">
+                STOCK: ${vCount}<br>USING: ${uCount}
+            </div>
+        </div>
+        
+        ${isDiscoveryMode ? `<div class="mono" style="font-size:10px; color:#ff9800; font-weight:bold; margin-bottom:10px;">> 找不到精確名稱，以下是相關類別的庫存：</div>` : ''}
+
+        <div style="max-height: 400px; overflow-y: auto;">
             ${matches.map(i => {
-                // --- 統一的日期推估邏輯 ---
-                let finalExp = i.expiry;
-                let isAutoExp = false;
-
-                if (!finalExp || finalExp.trim() === "") {
-                    isAutoExp = true;
-                    if (i.buyDate && i.buyDate.includes('-')) {
-                        const parts = i.buyDate.split('-');
-                        const estYear = parseInt(parts[0]) + 3;
-                        finalExp = `${estYear}-${parts[1]}-${parts[2]}`;
-                    } else {
-                        finalExp = "--";
-                    }
-                }
-
+                // 自動效期推算
+                let finalExp = i.expiry || (i.buyDate ? `${parseInt(i.buyDate.split('-')[0]) + 3}-${i.buyDate.split('-')[1]}-${i.buyDate.split('-')[2]}` : "--");
+                const isUsing = i.status === '使用中';
+                
                 return `
-                <div style="border:1px solid #000; padding:10px; margin-bottom:8px; background:${i.status === '使用中' ? '#fff9c4' : '#fff'}">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span class="mono" style="font-size:13px; font-weight:900;">${i.name}</span>
-                        <span class="mono" style="font-size:10px; background:#000; color:#fff; padding:0 4px;">${i.status}</span>
+                <div style="border-bottom: 1.5px solid #000; padding: 12px 0; display: flex; align-items: flex-start; gap: 10px; opacity: ${isUsing ? '0.6' : '1'};">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                            <span class="mono" style="font-size: 9px; border: 1px solid #ccc; color: #888; padding: 0 3px;">${i.subCat}</span>
+                            ${i.tags ? `<span class="mono" style="font-size: 9px; color: #000; font-weight:900;">#${i.tags.split(',')[0]}</span>` : ''}
+                        </div>
+                        
+                        <div class="mono" style="font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${i.name}
+                        </div>
+                        
+                        <div class="mono" style="font-size: 10px; color: #999; margin-top: 4px;">
+                            EXP: ${finalExp} ${isUsing ? ' (IN_USE)' : ''}
+                        </div>
                     </div>
-                    <div class="mono" style="font-size:9px; color:#666; margin-top: 5px;">
-                        ${i.category} > ${i.subCat} | 
-                        <span style="color:${isAutoExp ? '#ff9800' : '#666'}; font-weight:${isAutoExp ? '900' : 'normal'}">
-                            EXP: ${finalExp}${isAutoExp ? ' (EST.)' : ''}
-                        </span>
+
+                    <div style="display: flex; gap: 8px; align-items: center; padding-top: 15px;">
+                        <span onclick="editItem('${i.id}')" style="font-size: 10px; font-weight: 700; color: #0208c4; text-decoration: underline; cursor: pointer;">EDIT</span>
+                        ${!isUsing ? `<button onclick="useItem('${i.id}'); doCheck();" class="btn-sm" style="background:#000; color:#fff; border:none; padding: 4px 10px; font-size: 10px;">OPEN</button>` : ''}
                     </div>
                 </div>`;
             }).join('')}
         </div>
+        <div class="mono" style="text-align: center; font-size: 9px; color: #eee; margin-top: 20px; letter-spacing: 2px;">PROTOCOL_EOF</div>
     `;
 }
+
     function renderVault() {
     const container = document.getElementById('vault-shelves-container');
     const usingItems = db.filter(i => i.status === '使用中');
@@ -699,17 +881,30 @@
                 <div class="shelf-label" style="background: #000; color: #fff9c4; -webkit-text-fill-color: #fff9c4 !important;">ACTIVE_USING_LOG</div>
                 <div style="padding-top: 10px;">
                     ${usingItems.map(i => {
+                        // 修正 undefined 顯示問題
+                        const displayOpenDate = i.openDate || "N/A";
                         const days = i.openDate ? Math.floor((new Date() - new Date(i.openDate)) / (1000 * 60 * 60 * 24)) : 0;
+
                         return `
-                        <div class="item-line">
-                            <div style="flex: 1;">
-                                <span class="mono" style="font-size:10px; border:1px solid #000; padding:0 4px; background:#000; color:#fff;">${i.subCat}</span>
-                                <span class="mono" style="font-size:14px; margin-left:8px; font-weight:900;">${i.name}</span>
-                                <div class="mono" style="font-size:9px; color:#666; margin-top:4px;">> OPEN: ${i.openDate} (${days}D)</div>
+                        <div class="item-line" style="display: flex; align-items: center; padding: 18px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <span class="mono" style="font-size: 10px; background: #000; color: #fff; padding: 2px 6px; border-radius: 1px; white-space: nowrap;">
+                                        ${i.subCat}
+                                    </span>
+                                    <span style="font-size: 16px; font-weight: 800; color: #000; letter-spacing: -0.5px;">
+                                        ${i.name}
+                                    </span>
+                                </div>
+                                <div class="mono" style="font-size: 10px; color: #888; margin-top: 2px;">
+                                    <span style="opacity: 0.5;">⏭︎⏭︎</span> ${displayOpenDate} 
+                                    <span style="margin-left: 8px; color: #000;">(${days} DAYS)</span>
+                                </div>
                             </div>
-                            <div style="display: flex; gap: 4px;">
-                                <button onclick="editItem('${i.id}')" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
-                                <button onclick="finishItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">OFF</button>
+
+                            <div style="display: flex; align-items: center; gap: 15px; margin-left: 10px;">
+                                <span onclick="editItem('${i.id}')" style="font-size: 11px; font-weight: 900; color: #0208c4; cursor: pointer; text-decoration: underline;">EDIT</span>
+                                <button onclick="finishItem('${i.id}')" class="btn-sm" style="background: #000; color: #fff; border: none; padding: 6px 14px; font-size: 11px; font-weight: 900; letter-spacing: 1px;">OFF</button>
                             </div>
                         </div>`;
                     }).join('')}
@@ -724,38 +919,37 @@
                 ${Object.keys(grouped).map(cat => `
                     <div class="shelf-container">
                         <div class="shelf-label">${cat.toUpperCase()}</div>
-                        <div style="padding-top: 10px;">
+                        <div style="padding-top: 5px;">
                             ${grouped[cat].map(i => {
-                                // --- 核心：推估日期計算 ---
+                                // --- 日期計算邏輯 ---
                                 let finalExp = i.expiry;
                                 let isAutoExp = false;
-
                                 if (!finalExp || finalExp.trim() === "") {
                                     isAutoExp = true;
                                     if (i.buyDate && i.buyDate.includes('-')) {
                                         const parts = i.buyDate.split('-');
-                                        const estYear = parseInt(parts[0]) + 3;
-                                        finalExp = `${estYear}-${parts[1]}-${parts[2]}`;
-                                    } else {
-                                        finalExp = "--"; 
-                                    }
+                                        finalExp = `${parseInt(parts[0]) + 3}-${parts[1]}-${parts[2]}`;
+                                    } else { finalExp = "--"; }
                                 }
 
                                 return `
-                                <div class="item-line">
-                                    <div style="flex: 1;">
-                                        <span class="mono" style="font-size:10px; border:1px solid #ccc; padding:0 4px; color:#666;">${i.subCat}</span>
-                                        <span class="mono" style="font-size:14px; margin-left:8px; font-weight:900;">${i.name}</span>
-                                        <div class="mono" style="font-size:9px; color:${isAutoExp ? '#ff9800' : '#aaaaaa'}; margin-top:4px;">
-                                            EXP: ${finalExp} ${isAutoExp ? ' (EST.)' : ''}
+                                <div class="item-line" style="flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 0; border-bottom: 1px solid #eee;">
+                                    <div style="width: 100%; display: flex; align-items: flex-start;">
+                                        <span class="mono" style="font-size:9px; border:1px solid #000; padding:1px 4px; color:#000; white-space:nowrap; margin-top:2px;">${i.subCat}</span>
+                                        <span class="mono" style="font-size:15px; margin-left:8px; font-weight:900; word-break: break-all; flex: 1; line-height: 1.2;">${i.name}</span>
+                                    </div>
+
+                                    <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-end;">
+                                        <div class="mono" style="font-size: 10px; color: ${isAutoExp ? '#ff9800' : '#000'}; letter-spacing: 0.5px;">
+                                            <span style="opacity: 0.4;">EXP//</span> ${finalExp} ${isAutoExp ? '(*)' : ''}
+                                        </div>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button onclick="editItem('${i.id}')" class="btn-sm" style="border: none; color: #0208c4; text-decoration: underline; padding: 0;">EDIT</button>
+                                            <button onclick="deleteItem('${i.id}')" class="btn-sm" style="border: none; color: #ff0000; text-decoration: underline; padding: 0;">DROP</button>
+                                            <button onclick="useItem('${i.id}')" class="btn-sm" style="background: #000; color: #fff; padding: 4px 12px; font-size: 11px;">OPEN</button>
                                         </div>
                                     </div>
-                                    <div style="display: flex; gap: 4px;">
-                                        <button onclick="editItem('${i.id}')" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
-                                        <button onclick="deleteItem('${i.id}')" class="btn-sm" style="color:#ff0000 !important; border-color:#ff0000 !important;">DEL</button>
-                                        <button onclick="useItem('${i.id}')" class="btn-sm"  style="background:#000; color:#fff;">ON</button>
-                                    </div>
-                                </div>`;
+                                </div>`; // <-- 確保這裡有正確閉合
                             }).join('')}
                         </div>
                     </div>`).join('')}
@@ -785,76 +979,110 @@
     }
 
     function updatePickSub() {
-        const cat = document.getElementById('pick-cat').value;
-        const subS = document.getElementById('pick-sub');
-        const subs = [...new Set(db.filter(i => i.category === cat && i.status === '庫存').map(i => i.subCat))];
-        subS.innerHTML = '<option value="">-----</option>' + subs.map(s => `<option value="${s}">${s}</option>`).join('');
-        subS.disabled = (subs.length === 0);
+    const cat = document.getElementById('pick-cat').value;
+    const subS = document.getElementById('pick-sub');
+    if (!subS) return;
+
+    // A. 從資料庫 (db) 找出該大類下「現有」的子分類
+    const existingSubs = [...new Set(
+        db.filter(i => i.category === cat && i.status === '庫存')
+          .map(i => i.subCat)
+    )];
+
+    // B. 從設定 (cfg) 找出原本預定義的子分類 (作為補完)
+    // 雖然不一定每個都有庫存，但讓使用者能選也是對的
+    let definedSubs = [];
+    if (cfg.subCats) {
+        definedSubs = cfg.subCats.split(',').map(s => s.trim());
     }
+
+    // C. 合併並過濾 (只顯示該大類下真的有的，或者設定中有的)
+    // 這裡我們採取「實務導向」：既然是要推薦「開來用」，就只顯示「目前有庫存」的子分類
+    const finalOptions = existingSubs.filter(s => s && s !== "未分類");
+
+    if (finalOptions.length === 0) {
+        subS.innerHTML = '<option value="">-- 無庫存子類 --</option>';
+        subS.disabled = true;
+    } else {
+        subS.innerHTML = '<option value="">-- 全部子項目 --</option>' + 
+            finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+        subS.disabled = false;
+    }
+    
+    // 每當大類切換，自動觸發一次推薦
+    getRecommended();
+}
 
     function getRecommended() {
-        const cat = document.getElementById('pick-cat').value;
-        const sub = document.getElementById('pick-sub').value;
-        const area = document.getElementById('recommend-area');
-        let items = db.filter(i => i.category === cat && i.subCat === sub && i.status === '庫存');
-        // 2. 排序邏輯：包含「自動 +3 年」機制
-            items.sort((a, b) => {
-                // 取得有效日期：如果有 expiry 就用它；沒有就用 buyDate + 3年
-                const getExpDate = (item) => {
-                    if (item.expiry && item.expiry.trim() !== "") return item.expiry;
-                    
-                    // 計算 buyDate + 3年
-                    if (item.buyDate) {
-                        const dateParts = item.buyDate.split('-');
-                        if (dateParts.length === 3) {
-                            const year = parseInt(dateParts[0]) + 3;
-                            return `${year}-${dateParts[1]}-${dateParts[2]}`;
-                        }
-                    }
-                    return '9999-12-31'; // 完全沒日期資料的墊後
-                };
+    const cat = document.getElementById('pick-cat').value;
+    const sub = document.getElementById('pick-sub').value;
+    const area = document.getElementById('recommend-area');
+    
+    // 取得搜尋框內容，用來支援「我想用美白」這種特定需求
+    const searchTag = document.getElementById('check-input')?.value.trim().toLowerCase() || "";
 
-                return getExpDate(a).localeCompare(getExpDate(b));
-            });
-        const top3 = items.slice(0, 3);
-        const labelColors = ['#ff4d4d', '#ffa64d', '#ffdb4d'];
-            area.innerHTML = top3.length ? top3.map((i, idx) => {
-            // --- 核心計算邏輯 ---
-            let finalExp = i.expiry;
-            let isAutoExp = false;
-
-            if (!finalExp || finalExp.trim() === "") {
-                isAutoExp = true;
-                if (i.buyDate) {
-                    const dateParts = i.buyDate.split('-');
-                    if (dateParts.length === 3) {
-                        // 自動推算 +3 年
-                        const year = parseInt(dateParts[0]) + 3;
-                        finalExp = `${year}-${dateParts[1]}-${dateParts[2]}`;
-                    }
-                } else {
-                    finalExp = "UNKNOWN";
-                }
-            }
-
-            return `
-            <div style="border: 2px solid #000; margin: 25px 0; padding: 18px; position: relative; background: #fff; box-shadow: 6px 6px 0px #eee;">
-                <div class="mono" style="position: absolute; top: -12px; left: 12px; background: ${labelColors[idx] || '#ccc'}; color: #000; font-size: 11px; padding: 3px 10px; font-weight: 900; border: 1px solid #000;">
-                    PICK_0${idx+1} ${isAutoExp ? '[ESTIMATED]' : ''}
-                </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <span class="mono" style="font-size: 10px; border: 1px solid #ccc; padding: 1px 4px; color: #666; background: #f4f4f4;">${i.subCat}</span>
-                        <span class="mono" style="font-size: 15px; font-weight:900; margin-left: 8px;">${i.name}</span>
-                        <div class="mono" style="font-size: 10px; color: ${isAutoExp ? '#ff9800' : '#aaa'}; margin-top: 6px; font-weight: bold;">
-                            > EXP: ${finalExp} ${isAutoExp ? '(*)' : ''}
-                        </div>
-                    </div>
-                    <button onclick="quickUse(${i.id})" class="btn-sm" style="background:#000; color:#fff; padding: 8px 16px;">OPEN</button>
-                </div>
-            </div>`;
-        }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
+    if (!cat) {
+        area.innerHTML = `<div class="mono" style="padding:20px; text-align:center; color:#888;">[ SELECT_CATEGORY_TO_START_PROTOCOL ]</div>`;
+        return;
     }
+
+    let items = db.filter(i => i.status === '庫存' && i.category === cat);
+    if (sub) items = items.filter(i => i.subCat === sub);
+    
+    // 如果有輸入關鍵字（如美白），優先篩選
+    if (searchTag) {
+        items = items.filter(i => 
+            (i.name || "").toLowerCase().includes(searchTag) || 
+            (i.tags || "").toLowerCase().includes(searchTag)
+        );
+    }
+
+    // 效期排序
+    items.sort((a, b) => {
+        const getExp = (item) => {
+            if (item.expiry) return item.expiry;
+            if (item.buyDate && item.buyDate.includes('-')) {
+                const p = item.buyDate.split('-');
+                return `${parseInt(p[0]) + 3}-${p[1]}-${p[2]}`;
+            }
+            return "9999-12-31";
+        };
+        return getExp(a).localeCompare(getExp(b));
+    });
+
+    const top3 = items.slice(0, 3);
+    const labelColors = ['#ff4d4d', '#ffa64d', '#ffdb4d']; // 恢復原本的紅、橘、黃標籤色
+
+    area.innerHTML = top3.length ? top3.map((i, idx) => {
+        let finalExp = i.expiry;
+        let isAutoExp = false;
+
+        if (!finalExp || finalExp.trim() === "") {
+            isAutoExp = true;
+            if (i.buyDate) {
+                const parts = i.buyDate.split('-');
+                finalExp = `${parseInt(parts[0]) + 3}-${parts[1]}-${parts[2]}`;
+            } else { finalExp = "UNKNOWN"; }
+        }
+
+        return `
+        <div style="border: 2px solid #000; margin: 25px 0; padding: 18px; position: relative; background: #fff; box-shadow: 6px 6px 0px #eee;">
+            <div class="mono" style="position: absolute; top: -12px; left: 12px; background: ${labelColors[idx] || '#ccc'}; color: #000; font-size: 11px; padding: 3px 10px; font-weight: 900; border: 1px solid #000;">
+                PICK_0${idx+1} ${isAutoExp ? '[ESTIMATED]' : ''}
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <span class="mono" style="font-size: 10px; border: 1px solid #ccc; padding: 1px 4px; color: #666; background: #f4f4f4;">${i.subCat}</span>
+                    <span class="mono" style="font-size: 15px; font-weight:900; margin-left: 8px;">${i.name}</span>
+                    <div class="mono" style="font-size: 10px; color: ${isAutoExp ? '#ff9800' : '#aaa'}; margin-top: 6px; font-weight: bold;">
+                        > EXP: ${finalExp} ${isAutoExp ? '(*)' : ''}
+                    </div>
+                </div>
+                <button onclick="quickUse('${i.id}')" class="btn-sm" style="background:#000; color:#fff; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">OPEN</button>
+            </div>
+        </div>`;
+    }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
+}
 
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
@@ -881,7 +1109,7 @@
         const a = document.createElement('a');
         const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
         a.href = url;
-        a.download = `RETAIL_V52_BACKUP_${dateStr}.json`;
+        a.download = `RT_backup_${dateStr}.json`;
         document.body.appendChild(a);
         a.click();
         
@@ -934,7 +1162,18 @@
     }
 
 
-    window.onload = () => { setupDateAutoFormat('in-buy'); setupDateAutoFormat('in-exp'); refresh(); };
+    window.onload = () => { 
+    setupDateAutoFormat('in-buy'); 
+    setupDateAutoFormat('in-exp'); 
+    
+    // 初始化時，確保搜尋框是空的
+    if(document.getElementById('check-input')) {
+        document.getElementById('check-input').value = '';
+    }
+    
+    refresh(); 
+};
+
 </script>
 </body>
 </html>
