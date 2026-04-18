@@ -516,22 +516,18 @@
         localStorage.setItem(STORE_DB, JSON.stringify(db)); 
         localStorage.setItem(STORE_CFG, JSON.stringify(cfg)); 
     }
-
+    
     function saveCfg() {
-        // 同時抓取兩個輸入框的值
-        const catInput = document.getElementById('cfg-cats');
-        const subInput = document.getElementById('cfg-sub-cats');
+        // 確保抓得到 textarea 的內容
+        const catVal = document.getElementById('cfg-cats').value;
+        const subVal = document.getElementById('cfg-sub-cats').value;
         
-        if (catInput) cfg.cats = catInput.value;
-        if (subInput) cfg.subCats = subInput.value;
+        cfg.cats = catVal;
+        cfg.subCats = subVal;
         
         save();    // 儲存到 localStorage
-        refresh(); // 刷新 UI 與所有選單
-        
-        // 立即更新「新增視窗」裡的子分類清單
-        updateInSubOptions(); 
-        
-        console.log("PROTOCOL_CONFIG_UPDATED");
+        refresh(); // 刷新 UI
+        console.log("CONFIG_SYNCED", cfg);
     }
 
     function updateInSubOptions() {
@@ -563,14 +559,13 @@
         document.getElementById(id).classList.add('active'); 
         el.classList.add('active'); 
     
-        // 如果切換到系統頁面，填入對應的設定值
+        // 關鍵：切換到系統頁面時，強制重新同步一次數值到輸入框
         if (id === 'page-sys') {
-            const catInput = document.getElementById('cfg-cats');
-            const subInput = document.getElementById('cfg-sub-cats');
-            if (catInput) catInput.value = cfg.cats || "";
-            if (subInput) subInput.value = cfg.subCats || "";
+            const cats = document.getElementById('cfg-cats');
+            const subs = document.getElementById('cfg-sub-cats');
+            if (cats) cats.value = cfg.cats || "";
+            if (subs) subs.value = cfg.subCats || "";
         }
-        refresh(); 
     }
 
     function openEntry() {
@@ -1114,8 +1109,7 @@
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
 }
 
-    function quickUse(id) { useItem(id); getRecommended(); }
-    function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
+
     
     // --- [備份] 匯出檔案 (對齊 retail_v52 版本) ---
     function exportDataToFile() {
