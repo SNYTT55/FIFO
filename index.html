@@ -547,22 +547,38 @@
     function closeEntry() { document.getElementById('entry-overlay').style.display = 'none'; }
 
     function editItem(id) {
-        const i = db.find(x => x.id === id);
-        if(!i) return;
-        openEntry();
-        document.getElementById('form-title').innerText = 'UPDATE_ENTRY_LOG';
-        document.getElementById('edit-id').value = i.id;
-        document.getElementById('in-cat').value = i.category;
-        document.getElementById('in-sub').value = i.subCat;
-        document.getElementById('in-name').value = i.name;
-        document.getElementById('in-tag').value = i.tags || '';
-        document.getElementById('in-buy').value = i.buyDate;
-        document.getElementById('in-exp').value = i.expiry;
-        document.getElementById('in-bar').value = i.barcode || '';
-        document.getElementById('in-status').value = i.status;
-        document.getElementById('in-qty').value = 1;
-        document.getElementById('in-qty').disabled = true;
-    }
+    // 1. 使用 == 避免型別錯誤 (字串 vs 數字)
+    const i = db.find(x => x.id == id); 
+    if(!i) return;
+
+    // 2. 打開視窗
+    document.getElementById('entry-overlay').style.display = 'block';
+    document.getElementById('form-title').innerText = 'UPDATE_ENTRY_LOG';
+    
+    // 3. 填入關鍵 ID
+    document.getElementById('edit-id').value = i.id;
+
+    // 4. 處理分類與連動 (這步很重要，否則子分類會跳掉)
+    document.getElementById('in-cat').innerHTML = cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+    document.getElementById('in-cat').value = i.category;
+    
+    // 手動觸發一次子分類更新邏輯 (如果你有 updateInSub 的話)
+    // 如果沒有，這裡手動補齊
+    const subEl = document.getElementById('in-sub');
+    subEl.value = i.subCat;
+
+    // 5. 填寫剩餘欄位
+    document.getElementById('in-name').value = i.name;
+    document.getElementById('in-tag').value = i.tags || '';
+    document.getElementById('in-buy').value = i.buyDate || '';
+    document.getElementById('in-exp').value = i.expiry || '';
+    document.getElementById('in-bar').value = i.barcode || '';
+    document.getElementById('in-status').value = i.status;
+    
+    // 6. 鎖定數量
+    document.getElementById('in-qty').value = 1;
+    document.getElementById('in-qty').disabled = true;
+}
 
     function deleteItem(id) {
         if(confirm("CONFIRM_PERMANENT_DELETION?")) {
@@ -692,7 +708,7 @@
                                 <div class="mono" style="font-size:9px; color:#666; margin-top:4px;">> OPEN: ${i.openDate} (${days}D)</div>
                             </div>
                             <div style="display: flex; gap: 4px;">
-                                <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
+                                <button onclick="editItem('${i.id}')" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
                                 <button onclick="finishItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">OFF</button>
                             </div>
                         </div>`;
@@ -735,9 +751,9 @@
                                         </div>
                                     </div>
                                     <div style="display: flex; gap: 4px;">
-                                        <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
-                                        <button onclick="deleteItem(${i.id})" class="btn-sm" style="color:#ff0000 !important; border-color:#ff0000 !important;">DEL</button>
-                                        <button onclick="useItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">ON</button>
+                                        <button onclick="editItem('${i.id}')" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
+                                        <button onclick="deleteItem('${i.id}')" class="btn-sm" style="color:#ff0000 !important; border-color:#ff0000 !important;">DEL</button>
+                                        <button onclick="useItem('${i.id}')" class="btn-sm"  style="background:#000; color:#fff;">ON</button>
                                     </div>
                                 </div>`;
                             }).join('')}
