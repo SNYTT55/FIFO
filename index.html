@@ -7,7 +7,7 @@
     <meta name="format-detection" content="date=no">
     <meta name="format-detection" content="address=no">
     <meta name="format-detection" content="email=no">
-    <title>RETAIL_V52_FIXED</title>
+    <title>RETAIL_FIXED</title>
     <style>
         /* --- 核心系統規範與重置 --- */
         :root { 
@@ -41,8 +41,8 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
-            margin-bottom: 25px;
-            border-bottom: 4px solid #000;
+            border-bottom: 3px solid #000;
+            margin-bottom: 30px;
             padding-bottom: 10px;
             height: 50px; /* 固定高度確保切換時視覺不跳動 */
         }
@@ -104,15 +104,16 @@
             border-top: 4px solid var(--sys-accent); 
         }
 
-        /* --- 貨架與列表樣式 (問題 2 的核心修正) --- */
+        /* 修改投影為更銳利的工業感 */
         .shelf-container { 
             border: 2px solid var(--sys-border); 
-            margin-bottom: 35px; 
+            margin-bottom: 25px; 
             position: relative; 
             background: #fff; 
-            box-shadow: 4px 4px 0px #000; /* 統一改為黑影 */
-            padding: 18px; /* 統一內距 */
+            box-shadow: 6px 6px 0px #e0e0e0; /* 淺灰色投影增加立體感但不沉重 */
+            padding: 20px 18px 12px 18px; 
         }
+        
         .shelf-label { 
             position: absolute; 
             top: -12px; 
@@ -139,6 +140,11 @@
             padding: 6px 12px; font-size: 11px; border: 1px solid var(--sys-border); 
             background: #fff; cursor: pointer; font-family: var(--sys-font); font-weight: 900;
         }
+
+        .btn-sm:active {
+            background: #000 !important;
+            color: #fff !important;
+        }
         .btn-danger {
             background: #ff0000; color: #fff; border: 2px solid var(--sys-border);
             font-family: var(--sys-font); font-weight: 900; cursor: pointer;
@@ -161,6 +167,126 @@
         .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .form-group { display: flex; flex-direction: column; flex: 1; min-width: 0; }
         .form-group label { font-size: 10px; font-weight: 900; margin-bottom: 5px; }
+
+        /* --- 移除舊的 form-row 樣式，改用新的懸浮排版 --- */
+        #entry-overlay .form-row { 
+            display: flex; 
+            gap: 20px; /* 增加間距，營造空間感 */
+            margin-bottom: 25px; 
+            border: none; /* 確保移除所有邊框 */
+        }
+
+        #entry-overlay .form-group { 
+            display: flex; 
+            flex-direction: column; 
+            flex: 1; 
+            position: relative; /* 用於定位 */
+        }
+
+        /* --- 核心變更：重塑輸入框樣式 --- */
+        #entry-overlay input, 
+        #entry-overlay select {
+            width: 100%;
+            border: none !important; /* 徹底移除邊框 */
+            border-bottom: 1px solid #e0e0e0 !important; /* 只留一條極細的淺灰底線 */
+            padding: 12px 0px !important; /* 增加上下內距，移除左右內距，讓文字靠左對齊 */
+            font-size: 16px; /* 稍微放大字體，增加可讀性 */
+            font-family: var(--sys-font);
+            font-weight: 500; /* 不要太粗，保持優雅 */
+            color: #333 !important;
+            background-color: transparent !important; /* 背景透明 */
+            border-radius: 0;
+            box-shadow: none !important; /* 移除任何陰影 */
+            transition: all 0.3s ease; /* 平滑過渡效果 */
+            -webkit-appearance: none; /* 移除 iOS 預設樣式 */
+        }
+        
+        /* 條碼按鈕容器：確保居中且有呼吸感 */
+        .btn-save-protocol {
+            all: unset;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            
+            /* 縮減寬度，讓它在底部像個精緻的標籤 */
+            width: 75%; 
+            height: 75px; 
+            margin: 40px auto 10px auto; 
+            
+            /* 改良版條碼漸層：增加疏密變化，更有真實感 */
+            background: repeating-linear-gradient(
+                90deg,
+                #ddd,
+                #ddd 1px,
+                transparent 1px,
+                transparent 6px,
+                #bbb 6px,
+                #bbb 7px,
+                transparent 7px,
+                transparent 10px
+            );
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        /* 文字框：大一點、從容一點 */
+        .btn-save-protocol span {
+            background: #fff;
+            padding: 12px 28px;
+            font-family: var(--sys-font);
+            font-weight: 900;
+            font-size: 13px;
+            letter-spacing: 4px;
+            color: #000;
+            border: 2px solid #000;
+            z-index: 2;
+            white-space: nowrap;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.05); /* 極輕微的偏移感 */
+        }
+
+        /* 點擊時的動態：條碼變深、文字框產生壓感 */
+        .btn-save-protocol:active {
+            background: repeating-linear-gradient(
+                90deg,
+                #000,
+                #000 1px,
+                transparent 1px,
+                transparent 6px,
+                #444 6px,
+                #444 7px,
+                transparent 7px,
+                transparent 10px
+            );
+        }
+
+        .btn-save-protocol:active span {
+            background: #000;
+            color: #fff;
+            transform: translate(2px, 2px); /* 模擬按鈕按下的物理感 */
+            box-shadow: none;
+        }
+
+        /* 條碼下方數字 */
+        .btn-save-protocol::after {
+            content: "V E R I F I E D _ L O G";
+            position: absolute;
+            bottom: -5px;
+            font-size: 7px;
+            letter-spacing: 3px;
+            color: #ccc;
+            font-family: var(--sys-font);
+        }
+ 
+        /* --- 彈出視窗本身的樣式微調：更輕盈 --- */
+        #entry-overlay {
+            border: none; /* 移除外框 */
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); /* 使用柔和的大陰影，營造懸浮感 */
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px; /* 稍微加一點圓角 */
+        }
+
     </style>
 </head>
 <body>
@@ -227,7 +353,7 @@
 <div id="entry-overlay">
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px; border-bottom: 6px solid #000; padding-bottom: 10px;">
         <h2 class="mono" id="form-title" style="margin:0; font-size: 22px;">NEW_ENTRY_LOG</h2>
-        <div onclick="closeEntry()" style="cursor:pointer; font-weight:900; background:#f00; color:#fff; padding:4px 12px; font-size:12px; border: 2px solid #000;">CLOSE_X</div>
+        <div onclick="closeEntry()" style="cursor:pointer; font-weight:900; background:#000; color:#fff; padding:4px 12px; font-size:12px; border: 2px solid #000;">CLOSE_[X]</div>
     </div>
     <input type="hidden" id="edit-id">
     <div class="form-row">
@@ -247,7 +373,11 @@
         <div class="form-group"><label>BARCODE</label><input type="text" id="in-bar" placeholder="SCAN_OR_TYPE..."></div>
         <div class="form-group"><label>TAGS</label><input type="text" id="in-tag" placeholder="KEYWORDS..."></div>
     </div>
-    <button class="btn" style="height: 65px; width:100%; background:#000; color:#fff; border:2px solid #000;" onclick="saveEntry()">PRINT_LOG_PROTOCOL [↵]</button>
+    <div style="display: flex; justify-content: center; width: 100%;">
+        <button class="btn-save-protocol" onclick="saveEntry()">
+            <span>SAVE_AND_PRINT</span>
+        </button>
+    </div>
 </div>
 
 <nav class="nav">
@@ -379,30 +509,41 @@
     }
 
     function doCheck() {
-        const q = document.getElementById('check-input').value.trim().toLowerCase();
-        const res = document.getElementById('check-result');
-        if(!q) { res.innerHTML = ""; return; }
-        const matches = db.filter(i => i.status !== '已用完' && (
-            (i.barcode && i.barcode.includes(q)) || 
-            i.name.toLowerCase().includes(q) ||
-            (i.tags && i.tags.toLowerCase().includes(q))
-        ));
-        if (matches.length === 0) {
-            res.innerHTML = `<div style="color:#00ff00; padding:15px; border:1px solid #000; margin-top:10px;">✅ NO_MATCH</div>`;
-            return;
-        }
-        const vCount = matches.filter(i => i.status === '庫存').length;
-        const uCount = matches.filter(i => i.status === '使用中').length;
-        res.innerHTML = `
-            <div style="background:#000; color:#fff; padding:10px; margin:10px 0; border:2px solid #fff;">VAULT: ${vCount} | USING: ${uCount}</div>
+    const q = document.getElementById('check-input').value.trim().toLowerCase();
+    const res = document.getElementById('check-result');
+    if(!q) { res.innerHTML = ""; return; }
+    
+    // 優先過濾掉「已用完」的，僅搜尋現有物資
+    const matches = db.filter(i => i.status !== '已用完' && (
+        (i.barcode && i.barcode.includes(q)) || 
+        i.name.toLowerCase().includes(q) ||
+        (i.tags && i.tags.toLowerCase().includes(q)) ||
+        i.subCat.toLowerCase().includes(q)
+    ));
+
+    if (matches.length === 0) {
+        res.innerHTML = `<div style="color:#ff0000; padding:15px; border:1px dashed #000; margin-top:10px; font-size:10px;">[ STATUS: NO_MATCH_FOUND ]</div>`;
+        return;
+    }
+
+    const vCount = matches.filter(i => i.status === '庫存').length;
+    const uCount = matches.filter(i => i.status === '使用中').length;
+    
+    res.innerHTML = `
+        <div style="background:#000; color:#fff; padding:8px 12px; margin:10px 0; font-size:11px;">MATCH_FOUND: ${matches.length} (STOCK:${vCount} / USING:${uCount})</div>
+        <div style="max-height: 300px; overflow-y: auto;">
             ${matches.map(i => `
-                <div style="border:1px solid #000; padding:10px; margin-bottom:5px; background:#fff">
-                    <div class="mono" style="font-size:12px; font-weight:900;">${i.name} [${i.status === '庫存' ? 'VAULT' : 'USING'}]</div>
-                    <div class="mono" style="font-size:9px; color:#666; margin-top: 4px;">EXP: ${i.expiry || '--'}</div>
+                <div style="border:1px solid #000; padding:10px; margin-bottom:8px; background:${i.status === '使用中' ? '#fff9c4' : '#fff'}">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span class="mono" style="font-size:13px; font-weight:900;">${i.name}</span>
+                        <span class="mono" style="font-size:10px; background:#000; color:#fff; padding:0 4px;">${i.status}</span>
+                    </div>
+                    <div class="mono" style="font-size:9px; color:#666; margin-top: 5px;">${i.category} > ${i.subCat} | EXP: ${i.expiry || '--'}</div>
                 </div>
             `).join('')}
-        `;
-    }
+        </div>
+    `;
+}
 
     function renderVault() {
         const container = document.getElementById('vault-shelves-container');
