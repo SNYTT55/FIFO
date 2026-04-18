@@ -83,10 +83,26 @@
 
         /* 手機端專屬微調 (RWD) */
         @media (max-width: 480px) {
-            #entry-overlay .form-row { flex-direction: row; flex-wrap: wrap; gap: 10px; }
-            .form-group { min-width: 45%; } /* 手機上兩兩並排 */
-            .form-group[style*="flex:2"] { min-width: 100%; } /* 名稱欄位強行滿版 */
-            .page-header h2 { font-size: 20px; }
+            /* 1. 確保每一行 form-row 都不換行 */
+            #entry-overlay .form-row { 
+                display: flex !important;
+                flex-direction: row !important; /* 強制橫向 */
+                flex-wrap: nowrap !important;  /* 禁止自動換行 */
+                gap: 15px; 
+            }
+
+            /* 2. 針對「名稱+數量」這行做特殊處理 */
+            /* 確保名稱佔據大比例，數量佔據小比例，且兩者都不會縮小到看不見 */
+            .form-group {
+                min-width: 0; /* 這是關鍵：允許 Flex 項目縮小到小於內容寬度 */
+            }
+
+            /* 3. 調整 Label 在手機上的顯示，避免文字太長擠爆空間 */
+            #entry-overlay label {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
 
         /* 修改投影為更銳利的工業感 */
