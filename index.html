@@ -518,59 +518,56 @@
     }
 
     function saveCfg() {
-        // 1. 同時抓取兩個輸入框的值
-        const cats = document.getElementById('cfg-cats').value;
-        const subCats = document.getElementById('cfg-sub-cats').value;
+        // 同時抓取兩個輸入框的值
+        const catInput = document.getElementById('cfg-cats');
+        const subInput = document.getElementById('cfg-sub-cats');
         
-        // 2. 存入全域變數 cfg
-        cfg.cats = cats;
-        cfg.subCats = subCats;
+        if (catInput) cfg.cats = catInput.value;
+        if (subInput) cfg.subCats = subInput.value;
         
-        // 3. 執行儲存與刷新
-        save(); 
-        refresh(); 
+        save();    // 儲存到 localStorage
+        refresh(); // 刷新 UI 與所有選單
         
-        // 4. 關鍵：立即更新新增視窗裡的「子分類下拉選單」
-        updateSubCatSuggestions();
+        // 立即更新「新增視窗」裡的子分類清單
+        updateInSubOptions(); 
         
         console.log("PROTOCOL_CONFIG_UPDATED");
     }
 
     function updateInSubOptions() {
-    const cat = document.getElementById('in-cat').value;
-    const subEl = document.getElementById('in-sub');
-    if (!subEl) return;
-
-    // 1. 從 db 找出這個大類曾經用過的子分類
-    const existingSubs = [...new Set(
-        db.filter(i => i.category === cat).map(i => i.subCat)
-    )].filter(s => s && s !== "未分類");
-
-    // 2. 取得系統設定 (cfg) 中的所有子分類作為備選
-    let cfgSubs = [];
-    if (cfg.subCats) {
-        cfgSubs = cfg.subCats.split(',').map(s => s.trim());
-    }
-
-    // 3. 智慧交集：如果該子分類在 db 中屬於這個大類，或者是完全沒被用過的新分類
-    // 這裡我們簡化邏輯：優先顯示該大類下「已存在」的子類
-    const finalOptions = existingSubs.length > 0 ? existingSubs : cfgSubs;
-
-    subEl.innerHTML = `<option value="未分類">----</option>` + 
-        finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+        const cat = document.getElementById('in-cat').value;
+        const subEl = document.getElementById('in-sub');
+        if (!subEl) return;
     
-}    
+        // 1. 從 db 找出這個大類曾經用過的子分類
+        const existingSubs = [...new Set(
+            db.filter(i => i.category === cat).map(i => i.subCat)
+        )].filter(s => s && s !== "未分類");
+    
+        // 2. 取得系統設定 (cfg) 中的所有子分類
+        let cfgSubs = [];
+        if (cfg.subCats) {
+            cfgSubs = cfg.subCats.split(',').map(s => s.trim());
+        }
+    
+        // 3. 聯集：顯示「設定好的」+「資料庫已有的」
+        const finalOptions = [...new Set([...cfgSubs, ...existingSubs])];
+    
+        subEl.innerHTML = `<option value="未分類">--選擇子類--</option>` + 
+            finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+    }
 
     function tab(id, el) { 
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
         document.getElementById(id).classList.add('active'); 
         el.classList.add('active'); 
-
+    
         // 如果切換到系統頁面，填入對應的設定值
         if (id === 'page-sys') {
-            document.getElementById('cfg-cats').value = cfg.cats || "";
+            const catInput = document.getElementById('cfg-cats');
             const subInput = document.getElementById('cfg-sub-cats');
+            if (catInput) catInput.value = cfg.cats || "";
             if (subInput) subInput.value = cfg.subCats || "";
         }
         refresh(); 
