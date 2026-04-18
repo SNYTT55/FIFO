@@ -610,7 +610,7 @@
                 }
 
                 return `
-                <div style="border:1px solid #000; padding:10px; margin-bottom:8px; background:${i.status === '使用中' ? '#eeeee6' : '#fff'}">
+                <div style="border:1px solid #000; padding:10px; margin-bottom:8px; background:${i.status === '使用中' ? '#fff9c4' : '#fff'}">
                     <div style="display:flex; justify-content:space-between;">
                         <span class="mono" style="font-size:13px; font-weight:900;">${i.name}</span>
                         <span class="mono" style="font-size:10px; background:#000; color:#fff; padding:0 4px;">${i.status}</span>
@@ -650,8 +650,8 @@
     let usingSection = "";
     if (usingItems.length > 0) {
         usingSection = `
-            <div class="shelf-container" style="background: #eeeee6;">
-                <div class="shelf-label" style="background: #000; color: #eeeee6; -webkit-text-fill-color: #eeeee6 !important;">ACTIVE_USING_LOG</div>
+            <div class="shelf-container" style="background: #fff9c4;">
+                <div class="shelf-label" style="background: #000; color: #fff9c4; -webkit-text-fill-color: #fff9c4 !important;">ACTIVE_USING_LOG</div>
                 <div style="padding-top: 10px;">
                     ${usingItems.map(i => {
                         const days = i.openDate ? Math.floor((new Date() - new Date(i.openDate)) / (1000 * 60 * 60 * 24)) : 0;
