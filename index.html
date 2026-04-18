@@ -970,17 +970,24 @@
 }
 
     function refresh() {
-        document.getElementById('cfg-cats').value = cfg.cats;
-        document.getElementById('pick-cat').innerHTML = '<option value="">-CATEGORY-</option>' + cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+        // 1. 同步設定區的數值
+        if(document.getElementById('cfg-cats')) {
+            document.getElementById('cfg-cats').value = cfg.cats || "";
+        }
+        
+        // 2. 更新「篩選區」的大類選單
+        const pickCat = document.getElementById('pick-cat');
+        if (pickCat) {
+            pickCat.innerHTML = '<option value="">-CATEGORY-</option>' + 
+                (cfg.cats || "").split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
+        }
+    
+        // 3. 重新渲染主畫面與歸檔區
         renderVault();
-        const archived = db.filter(i => i.status === '已用完');
-        document.getElementById('archive-list').innerHTML = `
-            <div style="border-bottom: 1px dashed #00ff00; padding-bottom: 5px; margin-bottom: 10px; opacity: 0.7;">TOTAL_RECORDS: ${archived.length}</div>
-            ${archived.length ? archived.map(i => `
-                <div style="margin-bottom: 4px;">
-                    <span style="opacity: 0.5;">[${i.finishDate || '0000-00-00'}]</span> <span>${i.name}</span> <span style="color: #666; float: right;">...OK</span>
-                </div>`).join('') : '<div style="color:#444;">NO_DATA_LOGGED</div>'}
-            <div style="margin-top: 10px; color: #444; border-top: 1px solid #222; padding-top: 5px;">_EOF</div>`;
+        renderArchive(); // 建議把歸檔渲染獨立出來或確保 refresh 內有執行
+        
+        // 關鍵：匯入後若要看到子分類，大類必須先被選取，或手動觸發一次子類更新
+        updatePickSub(); 
     }
 
     function clearArchive() {
@@ -990,39 +997,34 @@
     }
 
     function updatePickSub() {
-    const cat = document.getElementById('pick-cat').value;
-    const subS = document.getElementById('pick-sub');
-    if (!subS) return;
-
-    // A. 從資料庫 (db) 找出該大類下「現有」的子分類
-    const existingSubs = [...new Set(
-        db.filter(i => i.category === cat && i.status === '庫存')
-          .map(i => i.subCat)
-    )];
-
-    // B. 從設定 (cfg) 找出原本預定義的子分類 (作為補完)
-    // 雖然不一定每個都有庫存，但讓使用者能選也是對的
-    let definedSubs = [];
-    if (cfg.subCats) {
-        definedSubs = cfg.subCats.split(',').map(s => s.trim());
-    }
-
-    // C. 合併並過濾 (只顯示該大類下真的有的，或者設定中有的)
-    // 這裡我們採取「實務導向」：既然是要推薦「開來用」，就只顯示「目前有庫存」的子分類
-    const finalOptions = existingSubs.filter(s => s && s !== "未分類");
-
-    if (finalOptions.length === 0) {
-        subS.innerHTML = '<option value="">-- 無庫存子類 --</option>';
-        subS.disabled = true;
-    } else {
-        subS.innerHTML = '<option value="">-- 全部子項目 --</option>' + 
-            finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
-        subS.disabled = false;
-    }
+        const cat = document.getElementById('pick-cat').value;
+        const subS = document.getElementById('pick-sub');
+        if (!subS) return;
     
-    // 每當大類切換，自動觸發一次推薦
-    getRecommended();
-}
+        // 如果沒選大類，就清空子類
+        if (!cat) {
+            subS.innerHTML = '<option value="">-- 先選大類 --</option>';
+            subS.disabled = true;
+            return;
+        }
+    
+        // 同時抓取「資料庫有的」跟「設定裡預設的」
+        const dbSubs = db.filter(i => i.category === cat).map(i => i.subCat);
+        const cfgSubs = cfg.subCats ? cfg.subCats.split(',').map(s => s.trim()) : [];
+        
+        const allSubs = [...new Set([...dbSubs, ...cfgSubs])].filter(s => s && s !== "未分類");
+    
+        if (allSubs.length === 0) {
+            subS.innerHTML = '<option value="">-- 無定義子類 --</option>';
+            subS.disabled = true;
+        } else {
+            subS.innerHTML = '<option value="">-- 全部子項目 --</option>' + 
+                allSubs.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+            subS.disabled = false;
+        }
+        
+        getRecommended();
+    }
 
     function getRecommended() {
     const cat = document.getElementById('pick-cat').value;
