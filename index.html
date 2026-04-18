@@ -153,6 +153,31 @@
         }
         @keyframes danger-pulse { 0% { background:#f00; } 50% { background:#b00; } 100% { background:#f00; } }
 
+        /* 系統動作按鈕：去掉重感，使用文字鏈接感 */
+        .btn-system-action {
+            flex: 1;
+            background: transparent;
+            border: 1px solid #000;
+            padding: 12px;
+            font-family: var(--sys-font);
+            font-weight: 900;
+            font-size: 11px;
+            letter-spacing: 1px;
+            color: #000;
+            transition: all 0.2s;
+        }
+
+        .btn-system-action:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        /* 針對備份區塊的虛線容器 */
+        .shelf-container[style*="dashed"] {
+            border: 1px dashed #ccc !important;
+            box-shadow: none !important; /* 移除投影讓它看起來更像背景工具 */
+        }
+        
         #archive-list {
             background: #000; color: var(--sys-accent); padding: 18px; 
             border: 2px solid #000; font-size: 11px; line-height: 1.8;
@@ -302,6 +327,7 @@
             padding: 30px;
             border-radius: 8px; /* 稍微加一點圓角 */
         }
+        
 
     </style>
 </head>
@@ -345,17 +371,27 @@
         <h2 class="mono">03_SYSTEM</h2>
     </div>
 
-    <div class="shelf-container">
+    <div class="shelf-container" style="background: #fdfdfb; border-style: dashed;">
         <div class="shelf-label">CONFIG_PROTOCOL</div>
         <input type="text" id="cfg-cats" onchange="saveCfg()" style="background:#f4f4f4; margin-top: 10px;">
     </div>
 
-    <div class="shelf-container">
-        <div class="shelf-label">DATA_BRIDGE</div>
-        <textarea id="io-box" style="width:100%; height:100px; font-size:10px; margin-top:10px; background:#f4f4f4;" placeholder="LISTENING_FOR_STREAM..."></textarea>
-        <div class="form-row" style="margin-top:15px;">
-            <button class="btn-sm" style="flex:1; background:#000; color:#fff;" onclick="exportDB()">↑ EXPORT</button>
-            <button class="btn-sm" style="flex:1;" onclick="importDB()">↓ IMPORT</button>
+    <div class="shelf-container" style="background: #fdfdfb; border-style: dashed;">
+        <div class="shelf-label">SYSTEM_DATA_MANAGEMENT</div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 10px;">
+            <button onclick="exportDataToFile()" class="btn-system-action">
+                [ EXPORT_DATABASE ]
+            </button>
+            
+            <label for="import-file" class="btn-system-action" style="cursor: pointer; text-align: center;">
+                [ IMPORT_PROTOCOL ]
+            </label>
+            <input type="file" id="import-file" style="display: none;" onchange="importDataFromFile(event)">
+        </div>
+        
+        <div style="font-size: 8px; color: #aaa; margin-top: 12px; letter-spacing: 1px;">
+            NOTICE: LARGE_DATA_VOLUME_SUPPORTED (.JSON)
         </div>
     </div>
 
@@ -374,12 +410,12 @@
     <input type="hidden" id="edit-id">
     <div class="form-row">
         <div class="form-group"><label>CATEGORY</label><select id="in-cat"></select></div>
-        <div class="form-group"><label>SUB_CAT</label><input type="text" id="in-sub" placeholder="IDENTIFIER..."></div>
+        <div class="form-group"><label>SUB_CAT</label><input type="text" id="in-sub"></div>
         <div class="form-group"><label>STATUS</label><select id="in-status"><option value="庫存">STOCK</option><option value="使用中">USING</option></select></div>
 
     </div>
     <div class="form-row">
-        <div class="form-group" style="flex:2;"><label>PRODUCT_NAME</label><input type="text" id="in-name" placeholder="INPUT_NAME..."></div>
+        <div class="form-group" style="flex:2;"><label>PRODUCT_NAME</label><input type="text" id="in-name" ></div>
         <div class="form-group" style="flex:1;"><label>QTY</label><input type="number" id="in-qty" value="1" min="1"></div>
     </div>
     <div class="form-row">
@@ -387,8 +423,8 @@
         <div class="form-group"><label>EXPIRY_DATE</label><input type="text" id="in-exp" placeholder="YYYYMMDD" inputmode="numeric"></div>
     </div>
     <div class="form-row">
-        <div class="form-group"><label>BARCODE</label><input type="text" id="in-bar" placeholder="SCAN_OR_TYPE..."></div>
-        <div class="form-group"><label>TAGS</label><input type="text" id="in-tag" placeholder="KEYWORDS..."></div>
+        <div class="form-group"><label>BARCODE</label><input type="text" id="in-bar"></div>
+        <div class="form-group"><label>TAGS</label><input type="text" id="in-tag"></div>
     </div>
     <div style="display: flex; justify-content: center; width: 100%;">
         <button class="btn-save-protocol" onclick="saveEntry()">
@@ -588,7 +624,7 @@
                                     <div class="mono" style="font-size:9px; color:#666; margin-top:4px;">> OPEN: ${i.openDate} (${days}D)</div>
                                 </div>
                                 <div style="display: flex; gap: 4px;">
-                                    <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0000ff !important; border-color:#0000ff !important;">EDIT</button>
+                                    <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
                                     <button onclick="finishItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">OFF</button>
                                 </div>
                             </div>`;
@@ -613,7 +649,7 @@
                                             <div class="mono" style="font-size:9px; color:#aaaaaa; margin-top:4px;">EXP: ${i.expiry || '--'}</div>
                                         </div>
                                         <div style="display: flex; gap: 4px;">
-                                            <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0000ff !important; border-color:#0000ff !important;">EDIT</button>
+                                            <button onclick="editItem(${i.id})" class="btn-sm" style="color:#0208c4 !important; border-color:#0208c4 !important;">EDIT</button>
                                             <button onclick="deleteItem(${i.id})" class="btn-sm" style="color:#ff0000 !important; border-color:#ff0000 !important;">DEL</button>
                                             <button onclick="useItem(${i.id})" class="btn-sm" style="background:#000; color:#fff;">ON</button>
                                         </div>
@@ -677,16 +713,52 @@
 
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
-    function exportDB() {
-        try {
-            const dataStr = JSON.stringify({db, cfg});
-            const base64 = btoa(encodeURIComponent(dataStr).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
-            document.getElementById('io-box').value = base64;
-            navigator.clipboard.writeText(base64).then(() => alert("SYSTEM_BACKUP: SUCCESS"));
-        } catch(e) { alert("EXPORT_ERROR"); }
-    }
-    function importDB() { const raw = document.getElementById('io-box').value; if(raw && confirm("OVERWRITE?")) { const p = JSON.parse(decodeURIComponent(atob(raw).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''))); db=p.db; cfg=p.cfg; save(); refresh(); } }
+// --- 備份：匯出資料到檔案 ---
+    function exportDataToFile() {
+        // 假設你的資料存在 localStorage 或是某個全域變數 dbData
+        const data = localStorage.getItem('MY_INVENTORY_DB'); // 換成你的 key
+        if (!data) return alert("NO_DATA_FOUND");
 
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        a.href = url;
+        a.download = `INVENTORY_BACKUP_${timestamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        
+        // 清理
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 0);
+    }
+
+    // --- 還原：從檔案匯入資料 ---
+    function importDataFromFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const content = e.target.result;
+                // 驗證 JSON 格式
+                JSON.parse(content); 
+                
+                if (confirm("WARNING: THIS_WILL_OVERWRITE_CURRENT_DATABASE. PROCEED?")) {
+                    localStorage.setItem('MY_INVENTORY_DB', content);
+                    alert("RESTORE_COMPLETE_RELOADING...");
+                    location.reload(); // 重新整理頁面以套用資料
+                }
+            } catch (err) {
+                alert("ERROR: INVALID_JSON_FORMAT");
+            }
+        };
+        reader.readAsText(file);
+    }
     window.onload = () => { setupDateAutoFormat('in-buy'); setupDateAutoFormat('in-exp'); refresh(); };
 </script>
 </body>
