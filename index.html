@@ -713,8 +713,19 @@
 
     function finishItem(id) {
         if(confirm("MARK AS FINISHED?")) {
-            const i = db.find(x => x.id == id);
-            if(i) { i.status = '已用完'; i.finishDate = new Date().toISOString().split('T')[0]; save(); refresh(); }
+            // 修正：將 === 改為 ==，確保 ID 型別不一致時也能找到
+            const i = db.find(x => x.id == id); 
+            
+            if(i) { 
+                i.status = '已用完'; 
+                i.finishDate = new Date().toISOString().split('T')[0]; 
+                
+                save();    // 儲存到 localStorage
+                refresh(); // 重新渲染畫面（重要：不然 OFF 完東西還會在那裡）
+                console.log("ITEM_FINISHED_SUCCESSFULLY", id);
+            } else {
+                console.error("ITEM_NOT_FOUND", id);
+            }
         }
     }
 
