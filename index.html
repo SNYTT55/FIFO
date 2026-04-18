@@ -495,7 +495,7 @@
         if (!el) return;
 
         // A. 基礎保底分類 + 資料庫現有分類
-        const base = ["洗髮", "護髮", "沐浴", "臉部清潔", "精華液", "乳液", "58飼料"];
+        const base = ["洗髮", "護髮", "沐浴", "臉部清潔", "精華液", "乳液"];
         const existing = [...new Set(db.map(i => i.subCat).filter(s => s))];
         
         // B. 從 SYSTEM 設定區抓取的自定義分類
@@ -713,7 +713,7 @@
 
     function finishItem(id) {
         if(confirm("MARK AS FINISHED?")) {
-            const i = db.find(x => x.id === id);
+            const i = db.find(x => x.id == id);
             if(i) { i.status = '已用完'; i.finishDate = new Date().toISOString().split('T')[0]; save(); refresh(); }
         }
     }
