@@ -713,30 +713,40 @@
 
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
-// --- 備份：匯出資料到檔案 ---
+    
+    // --- [備份] 匯出檔案 (對齊 retail_v52 版本) ---
     function exportDataToFile() {
-        // 假設你的資料存在 localStorage 或是某個全域變數 dbData
-        const data = localStorage.getItem('MY_INVENTORY_DB'); // 換成你的 key
-        if (!data) return alert("NO_DATA_FOUND");
+        // 直接使用變數 db，並確保它有內容
+        if (!db || db.length === 0) {
+            alert("ERROR: DATABASE_IS_EMPTY");
+            return;
+        }
+        
+        // 包裝完整備份：包含資料 (db) 與 配置 (cfg)
+        const backupData = {
+            version: "RETAIL_V52",
+            timestamp: new Date().toISOString(),
+            db: db,   // 這裡直接引用你的全域變數 db
+            cfg: cfg  // 同時備份你的分類配置
+        };
 
-        const blob = new Blob([data], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         
         const a = document.createElement('a');
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
         a.href = url;
-        a.download = `INVENTORY_BACKUP_${timestamp}.json`;
+        a.download = `RETAIL_V52_BACKUP_${dateStr}.json`;
         document.body.appendChild(a);
         a.click();
         
-        // 清理
         setTimeout(() => {
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         }, 0);
     }
 
-    // --- 還原：從檔案匯入資料 ---
+    // --- [還原] 匯入檔案 ---
     function importDataFromFile(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -744,21 +754,41 @@
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const content = e.target.result;
-                // 驗證 JSON 格式
-                JSON.parse(content); 
+                const json = JSON.parse(e.target.result);
                 
-                if (confirm("WARNING: THIS_WILL_OVERWRITE_CURRENT_DATABASE. PROCEED?")) {
-                    localStorage.setItem('MY_INVENTORY_DB', content);
-                    alert("RESTORE_COMPLETE_RELOADING...");
-                    location.reload(); // 重新整理頁面以套用資料
+                // 檢查是否為有效的備份結構
+                const importedDb = json.db || (Array.isArray(json) ? json : null);
+                
+                if (!importedDb) {
+                    throw new Error("INVALID_FORMAT");
+                }
+
+                if (confirm(`DETECTED: ${importedDb.length} RECORDS. OVERWRITE CURRENT DATABASE?`)) {
+                    // 更新全域變數
+                    db = importedDb;
+                    
+                    // 如果檔案包含配置，同步還原
+                    if (json.cfg) {
+                        cfg = json.cfg;
+                    }
+
+                    // 執行存檔與刷新
+                    save(); 
+                    refresh();
+                    
+                    alert("PROTOCOL_RESTORE_SUCCESS");
+                    location.reload(); 
                 }
             } catch (err) {
-                alert("ERROR: INVALID_JSON_FORMAT");
+                alert("CRITICAL_ERROR: FILE_CORRUPTED_OR_INVALID");
+                console.error(err);
             }
         };
         reader.readAsText(file);
+        event.target.value = ''; // 重置以支援重複選取同一檔案
     }
+
+
     window.onload = () => { setupDateAutoFormat('in-buy'); setupDateAutoFormat('in-exp'); refresh(); };
 </script>
 </body>
