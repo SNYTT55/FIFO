@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <link rel="apple-touch-icon" href="icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="format-detection" content="telephone=no">
@@ -407,11 +406,10 @@
     </div>
 
     <div class="shelf-container" style="background: #fdfdfb; border-style: dashed;">
-        <div class="shelf-label">SYSTEM_PROTOCOL</div>
-        
+        <div class="shelf-label">CAT_PROTOCOL</div>
         <div style="margin-top: 10px;">
-            <label class="mono" style="font-size: 9px; color: #888;">GLOBAL_CATEGORY_LIST (大分類)</label>
-            <input type="text" id="cfg-cats" onchange="saveCfg()" placeholder="頭髮,臉部,身體..." style="background:#f4f4f4; margin-top: 5px;">
+            <label class="mono" style="font-size: 9px; color: #888;">GLOBAL_CATEGORY_LIST</label>
+            <input type="text" id="cfg-cats" onchange="saveCfg()" style="background:#f4f4f4; margin-top: 5px;">
         </div>
     </div>
 
@@ -496,7 +494,7 @@
         if (!el) return;
 
         // A. 基礎保底分類 + 資料庫現有分類
-        const base = ["洗髮", "護髮", "沐浴", "臉部清潔", "精華液", "乳液"];
+        const base = ["洗髮", "護髮", "沐浴", "臉部清潔", "精華液", "乳液", "58飼料"];
         const existing = [...new Set(db.map(i => i.subCat).filter(s => s))];
         
         // B. 從 SYSTEM 設定區抓取的自定義分類
@@ -516,56 +514,58 @@
         localStorage.setItem(STORE_DB, JSON.stringify(db)); 
         localStorage.setItem(STORE_CFG, JSON.stringify(cfg)); 
     }
-    
+
     function saveCfg() {
-        // 確保抓得到 textarea 的內容
-        const catVal = document.getElementById('cfg-cats').value;
-        const subVal = document.getElementById('cfg-sub-cats').value;
+        const catInput = document.getElementById('cfg-cats');
+        const subInput = document.getElementById('cfg-sub-cats');
         
-        cfg.cats = catVal;
-        cfg.subCats = subVal;
+        if (catInput) cfg.cats = catInput.value;
+        if (subInput) cfg.subCats = subInput.value;
         
-        save();    // 儲存到 localStorage
-        refresh(); // 刷新 UI
-        console.log("CONFIG_SYNCED", cfg);
+        save(); 
+        refresh();
+        updateSubCatSuggestions(); // 立即同步下拉選單
+        console.log("PROTOCOL_CONFIG_SAVED");
     }
 
     function updateInSubOptions() {
-        const cat = document.getElementById('in-cat').value;
-        const subEl = document.getElementById('in-sub');
-        if (!subEl) return;
-    
-        // 1. 從 db 找出這個大類曾經用過的子分類
-        const existingSubs = [...new Set(
-            db.filter(i => i.category === cat).map(i => i.subCat)
-        )].filter(s => s && s !== "未分類");
-    
-        // 2. 取得系統設定 (cfg) 中的所有子分類
-        let cfgSubs = [];
-        if (cfg.subCats) {
-            cfgSubs = cfg.subCats.split(',').map(s => s.trim());
-        }
-    
-        // 3. 聯集：顯示「設定好的」+「資料庫已有的」
-        const finalOptions = [...new Set([...cfgSubs, ...existingSubs])];
-    
-        subEl.innerHTML = `<option value="未分類">--選擇子類--</option>` + 
-            finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+    const cat = document.getElementById('in-cat').value;
+    const subEl = document.getElementById('in-sub');
+    if (!subEl) return;
+
+    // 1. 從 db 找出這個大類曾經用過的子分類
+    const existingSubs = [...new Set(
+        db.filter(i => i.category === cat).map(i => i.subCat)
+    )].filter(s => s && s !== "未分類");
+
+    // 2. 取得系統設定 (cfg) 中的所有子分類作為備選
+    let cfgSubs = [];
+    if (cfg.subCats) {
+        cfgSubs = cfg.subCats.split(',').map(s => s.trim());
     }
+
+    // 3. 智慧交集：如果該子分類在 db 中屬於這個大類，或者是完全沒被用過的新分類
+    // 這裡我們簡化邏輯：優先顯示該大類下「已存在」的子類
+    const finalOptions = existingSubs.length > 0 ? existingSubs : cfgSubs;
+
+    subEl.innerHTML = `<option value="未分類">----</option>` + 
+        finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+    
+}    
 
     function tab(id, el) { 
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
         document.getElementById(id).classList.add('active'); 
         el.classList.add('active'); 
-    
-        // 關鍵：切換到系統頁面時，強制重新同步一次數值到輸入框
+
+        // 如果切換到系統頁面，填入對應的設定值
         if (id === 'page-sys') {
-            const cats = document.getElementById('cfg-cats');
-            const subs = document.getElementById('cfg-sub-cats');
-            if (cats) cats.value = cfg.cats || "";
-            if (subs) subs.value = cfg.subCats || "";
+            document.getElementById('cfg-cats').value = cfg.cats || "";
+            const subInput = document.getElementById('cfg-sub-cats');
+            if (subInput) subInput.value = cfg.subCats || "";
         }
+        refresh(); 
     }
 
     function openEntry() {
@@ -712,19 +712,8 @@
 
     function finishItem(id) {
         if(confirm("MARK AS FINISHED?")) {
-            // 修正：將 === 改為 ==，確保 ID 型別不一致時也能找到
-            const i = db.find(x => x.id == id); 
-            
-            if(i) { 
-                i.status = '已用完'; 
-                i.finishDate = new Date().toISOString().split('T')[0]; 
-                
-                save();    // 儲存到 localStorage
-                refresh(); // 重新渲染畫面（重要：不然 OFF 完東西還會在那裡）
-                console.log("ITEM_FINISHED_SUCCESSFULLY", id);
-            } else {
-                console.error("ITEM_NOT_FOUND", id);
-            }
+            const i = db.find(x => x.id == id);
+            if(i) { i.status = '已用完'; i.finishDate = new Date().toISOString().split('T')[0]; save(); refresh(); }
         }
     }
 
@@ -969,37 +958,17 @@
 }
 
     function refresh() {
-        // 1. 同步設定區的數值 (新增子分類的同步)
-        if(document.getElementById('cfg-cats')) {
-            document.getElementById('cfg-cats').value = cfg.cats || "";
-        }
-        // 修正：同步子分類編輯框的數值
-        if(document.getElementById('cfg-sub-cats')) {
-            document.getElementById('cfg-sub-cats').value = cfg.subCats || "";
-        }
-        
-        // 2. 更新「主頁面篩選區」的大類選單
-        const pickCat = document.getElementById('pick-cat');
-        if (pickCat) {
-            pickCat.innerHTML = '<option value="">-CATEGORY-</option>' + 
-                (cfg.cats || "").split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
-        }
-    
-        // 3. 重新渲染畫面
+        document.getElementById('cfg-cats').value = cfg.cats;
+        document.getElementById('pick-cat').innerHTML = '<option value="">-CATEGORY-</option>' + cfg.cats.split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
         renderVault();
-        
-        // 檢查是否有 renderArchive 函式，有的話才執行
-        if (typeof renderArchive === "function") {
-            renderArchive();
-        }
-        
-        // 4. 更新子分類狀態
-        updatePickSub(); 
-        
-        // 5. 額外觸發：更新「新增視窗」內的子分類選單預選值
-        if (typeof updateInSubOptions === "function") {
-            updateInSubOptions();
-        }
+        const archived = db.filter(i => i.status === '已用完');
+        document.getElementById('archive-list').innerHTML = `
+            <div style="border-bottom: 1px dashed #00ff00; padding-bottom: 5px; margin-bottom: 10px; opacity: 0.7;">TOTAL_RECORDS: ${archived.length}</div>
+            ${archived.length ? archived.map(i => `
+                <div style="margin-bottom: 4px;">
+                    <span style="opacity: 0.5;">[${i.finishDate || '0000-00-00'}]</span> <span>${i.name}</span> <span style="color: #666; float: right;">...OK</span>
+                </div>`).join('') : '<div style="color:#444;">NO_DATA_LOGGED</div>'}
+            <div style="margin-top: 10px; color: #444; border-top: 1px solid #222; padding-top: 5px;">_EOF</div>`;
     }
 
     function clearArchive() {
@@ -1009,34 +978,39 @@
     }
 
     function updatePickSub() {
-        const cat = document.getElementById('pick-cat').value;
-        const subS = document.getElementById('pick-sub');
-        if (!subS) return;
-    
-        // 如果沒選大類，就清空子類
-        if (!cat) {
-            subS.innerHTML = '<option value="">-- 先選大類 --</option>';
-            subS.disabled = true;
-            return;
-        }
-    
-        // 同時抓取「資料庫有的」跟「設定裡預設的」
-        const dbSubs = db.filter(i => i.category === cat).map(i => i.subCat);
-        const cfgSubs = cfg.subCats ? cfg.subCats.split(',').map(s => s.trim()) : [];
-        
-        const allSubs = [...new Set([...dbSubs, ...cfgSubs])].filter(s => s && s !== "未分類");
-    
-        if (allSubs.length === 0) {
-            subS.innerHTML = '<option value="">-- 無定義子類 --</option>';
-            subS.disabled = true;
-        } else {
-            subS.innerHTML = '<option value="">-- 全部子項目 --</option>' + 
-                allSubs.sort().map(s => `<option value="${s}">${s}</option>`).join('');
-            subS.disabled = false;
-        }
-        
-        getRecommended();
+    const cat = document.getElementById('pick-cat').value;
+    const subS = document.getElementById('pick-sub');
+    if (!subS) return;
+
+    // A. 從資料庫 (db) 找出該大類下「現有」的子分類
+    const existingSubs = [...new Set(
+        db.filter(i => i.category === cat && i.status === '庫存')
+          .map(i => i.subCat)
+    )];
+
+    // B. 從設定 (cfg) 找出原本預定義的子分類 (作為補完)
+    // 雖然不一定每個都有庫存，但讓使用者能選也是對的
+    let definedSubs = [];
+    if (cfg.subCats) {
+        definedSubs = cfg.subCats.split(',').map(s => s.trim());
     }
+
+    // C. 合併並過濾 (只顯示該大類下真的有的，或者設定中有的)
+    // 這裡我們採取「實務導向」：既然是要推薦「開來用」，就只顯示「目前有庫存」的子分類
+    const finalOptions = existingSubs.filter(s => s && s !== "未分類");
+
+    if (finalOptions.length === 0) {
+        subS.innerHTML = '<option value="">-- 無庫存子類 --</option>';
+        subS.disabled = true;
+    } else {
+        subS.innerHTML = '<option value="">-- 全部子項目 --</option>' + 
+            finalOptions.sort().map(s => `<option value="${s}">${s}</option>`).join('');
+        subS.disabled = false;
+    }
+    
+    // 每當大類切換，自動觸發一次推薦
+    getRecommended();
+}
 
     function getRecommended() {
     const cat = document.getElementById('pick-cat').value;
@@ -1109,7 +1083,8 @@
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
 }
 
-
+    function quickUse(id) { useItem(id); getRecommended(); }
+    function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
     
     // --- [備份] 匯出檔案 (對齊 retail_v52 版本) ---
     function exportDataToFile() {
