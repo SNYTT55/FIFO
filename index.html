@@ -7,7 +7,7 @@
     <meta name="format-detection" content="date=no">
     <meta name="format-detection" content="address=no">
     <meta name="format-detection" content="email=no">
-    <title>RETAIL_FIXED</title>
+    <title>RETAIL_V52_FIXED</title>
     <style>
         /* --- 核心系統規範與重置 --- */
         :root { 
@@ -28,6 +28,7 @@
             color: #000; 
             overflow-x: hidden;
             font-family: var(--sys-font);
+            -webkit-font-smoothing: antialiased; /* 手機字體更清晰 */
         }
 
         .mono { font-family: var(--sys-font); font-weight: 900; }
@@ -57,7 +58,7 @@
             outline: none; 
             border-radius: 0; 
             background-color: #ffffff !important; 
-            height: 40px; 
+            height: 44px; 
             appearance: none; 
             -webkit-appearance: none;
             font-family: var(--sys-font); 
@@ -68,40 +69,24 @@
             -webkit-user-select: text !important;
             user-select: text !important;
         }
+
         input:focus, select:focus { 
-            background-color: #000 !important; 
-            color: #fff !important; 
-            -webkit-text-fill-color: #ffffff !important; 
+            background-color: rgba(0,0,0,0.05) !important; /* 淡淡的灰底，或是維持 transparent */
+            color: #000 !important; 
+            -webkit-text-fill-color: #000000 !important; /* 確保輸入中文字是黑色的 */
         }
 
         /* --- 導覽列 NAVIGATION --- */
-        .nav { 
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            display: flex; 
-            background: #000; 
-            height: 65px; 
-            z-index: 999; 
-        }
-        .nav-btn { 
-            flex: 1; 
-            color: #666 !important;
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 11px; 
-            cursor: pointer; 
-            border: none; 
-            background: none; 
-            font-family: 'Impact', sans-serif; 
-            letter-spacing: 1px;
-            transition: color 0.2s;
-            -webkit-text-fill-color: initial !important;
-        }
-        .nav-btn.active { 
-            color: #fff !important; 
-            border-top: 4px solid var(--sys-accent); 
+        .nav { position: fixed; bottom: 0; width: 100%; display: flex; background: #000; height: 65px; z-index: 999; }
+        .nav-btn { flex: 1; color: #666 !important; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; border: none; background: none; font-family: 'Impact', sans-serif; letter-spacing: 1px; }
+        .nav-btn.active { color: #fff !important; border-top: 4px solid var(--sys-accent); }
+
+        /* 手機端專屬微調 (RWD) */
+        @media (max-width: 480px) {
+            #entry-overlay .form-row { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+            .form-group { min-width: 45%; } /* 手機上兩兩並排 */
+            .form-group[style*="flex:2"] { min-width: 100%; } /* 名稱欄位強行滿版 */
+            .page-header h2 { font-size: 20px; }
         }
 
         /* 修改投影為更銳利的工業感 */
@@ -162,19 +147,25 @@
             display: none; position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%); width: 92%; max-height: 85vh;
             border: 1px solid #000; box-shadow: 6px 6px 0px #383838;
-            z-index: 2000; padding: 20px; background: #fff; overflow-y: auto;
+            z-index: 2000; padding: 20px; background: #F8F8F5; overflow-y: auto;
         }
         .form-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .form-group { display: flex; flex-direction: column; flex: 1; min-width: 0; }
         .form-group label { font-size: 10px; font-weight: 900; margin-bottom: 5px; }
 
-        /* --- 移除舊的 form-row 樣式，改用新的懸浮排版 --- */
-        #entry-overlay .form-row { 
-            display: flex; 
-            gap: 20px; /* 增加間距，營造空間感 */
-            margin-bottom: 25px; 
-            border: none; /* 確保移除所有邊框 */
+
+        #entry-overlay input:focus, 
+        #entry-overlay select:focus {
+            border-bottom: 2px solid #000 !important; /* 聚焦時底線變粗就好，不要換背景色 */
+            background-color: transparent !important; 
+            padding-left: 5px !important; /* 稍微位移增加動態感 */
         }
+
+        #entry-overlay .form-row { 
+                display: flex; 
+                gap: 15px; 
+                margin-bottom: 20px; 
+            }
 
         #entry-overlay .form-group { 
             display: flex; 
@@ -182,6 +173,15 @@
             flex: 1; 
             position: relative; /* 用於定位 */
         }
+
+        #entry-overlay label { 
+            font-size: 9px; 
+            font-weight: 900; 
+            color: #999; 
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }   
 
         /* --- 核心變更：重塑輸入框樣式 --- */
         #entry-overlay input, 
@@ -198,9 +198,9 @@
             border-radius: 0;
             box-shadow: none !important; /* 移除任何陰影 */
             transition: all 0.3s ease; /* 平滑過渡效果 */
-            -webkit-appearance: none; /* 移除 iOS 預設樣式 */
+            -webkit-text-fill-color: #000000 !important;
         }
-        
+
         /* 條碼按鈕容器：確保居中且有呼吸感 */
         .btn-save-protocol {
             all: unset;
@@ -282,7 +282,7 @@
         #entry-overlay {
             border: none; /* 移除外框 */
             box-shadow: 0 20px 50px rgba(0,0,0,0.15); /* 使用柔和的大陰影，營造懸浮感 */
-            background: #fff;
+            background: #F8F8F5;
             padding: 30px;
             border-radius: 8px; /* 稍微加一點圓角 */
         }
@@ -357,9 +357,10 @@
     </div>
     <input type="hidden" id="edit-id">
     <div class="form-row">
-        <div class="form-group"><label>STATUS</label><select id="in-status"><option value="庫存">STOCK</option><option value="使用中">USING</option></select></div>
         <div class="form-group"><label>CATEGORY</label><select id="in-cat"></select></div>
         <div class="form-group"><label>SUB_CAT</label><input type="text" id="in-sub" placeholder="IDENTIFIER..."></div>
+        <div class="form-group"><label>STATUS</label><select id="in-status"><option value="庫存">STOCK</option><option value="使用中">USING</option></select></div>
+
     </div>
     <div class="form-row">
         <div class="form-group" style="flex:2;"><label>PRODUCT_NAME</label><input type="text" id="in-name" placeholder="INPUT_NAME..."></div>
