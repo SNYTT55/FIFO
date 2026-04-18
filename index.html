@@ -974,24 +974,37 @@
 }
 
     function refresh() {
-        // 1. 同步設定區的數值
+        // 1. 同步設定區的數值 (新增子分類的同步)
         if(document.getElementById('cfg-cats')) {
             document.getElementById('cfg-cats').value = cfg.cats || "";
         }
+        // 修正：同步子分類編輯框的數值
+        if(document.getElementById('cfg-sub-cats')) {
+            document.getElementById('cfg-sub-cats').value = cfg.subCats || "";
+        }
         
-        // 2. 更新「篩選區」的大類選單
+        // 2. 更新「主頁面篩選區」的大類選單
         const pickCat = document.getElementById('pick-cat');
         if (pickCat) {
             pickCat.innerHTML = '<option value="">-CATEGORY-</option>' + 
                 (cfg.cats || "").split(',').map(c => `<option value="${c.trim()}">${c.trim()}</option>`).join('');
         }
     
-        // 3. 重新渲染主畫面與歸檔區
+        // 3. 重新渲染畫面
         renderVault();
-        renderArchive(); // 建議把歸檔渲染獨立出來或確保 refresh 內有執行
         
-        // 關鍵：匯入後若要看到子分類，大類必須先被選取，或手動觸發一次子類更新
+        // 檢查是否有 renderArchive 函式，有的話才執行
+        if (typeof renderArchive === "function") {
+            renderArchive();
+        }
+        
+        // 4. 更新子分類狀態
         updatePickSub(); 
+        
+        // 5. 額外觸發：更新「新增視窗」內的子分類選單預選值
+        if (typeof updateInSubOptions === "function") {
+            updateInSubOptions();
+        }
     }
 
     function clearArchive() {
