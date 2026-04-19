@@ -259,7 +259,7 @@
             color: #000 !important;
             border: none;
             padding: 4px 8px;
-            font-size: 16px;
+            font-size: 20px;
             font-family: var(--sys-font);
             font-weight: 500;
             letter-spacing: 1px;
@@ -272,23 +272,15 @@
             -webkit-appearance: none;
         }
 
-        .btn-on-action, .btn-off-action {
-            transition: transform 0.1s ease;
-        }
 
-       
 
-        .btn-on-action:active {
-            transform: scale(1.8); 
-            color:#ff0000 !important;
-        }
 
         .btn-text-link {
             background:transparent !important; /* 背景變透明 */ 
             color: #0208c4 !important;
             border: none;
             padding: 4px 8px;
-            font-size: 16px;
+            font-size: 20px;
             font-family: var(--sys-font);
             font-weight: 500;
             letter-spacing: 1px;
@@ -301,10 +293,6 @@
             -webkit-appearance: none ;
         }
 
-        .btn-text-link:active {
-            transform: scale(1.8); 
-            color: #0208c4 !important;
-        }
 
         /* 危險/清除按鈕 (帶有脈衝動畫) */
         .btn-danger { 
@@ -567,6 +555,7 @@
             letter-spacing: 3px;
             text-decoration: underline; /* 增加底線，看起來像個小連結 */
         }
+
 
     </style>
 </head>
@@ -1229,13 +1218,13 @@
                     <div style="display: flex; gap: 8px; align-items: center; padding-top: 15px; justify-content: flex-end; ">
                         <button onclick="editItem('${i.id}')" class="btn-text-link" 
                                 style="border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 32px; padding: 0 5px;">
-                            <span style="font-size: 14px;">⏮︎</span>
+                            <span style="font-size: 20px;">⏮︎</span>
                         </button>
 
                         ${!isUsing ? `
                         <button onclick="useItem('${i.id}'); doCheck();" class="btn-on-action" 
-                                style="display: flex; align-items: center; justify-content: center; height: 32px; min-width: 45px; padding: 0 14px; border: none; font-size: 11px; font-weight: 900;">
-                            ✔
+                                style="display: flex; align-items: center; justify-content: center; height: 32px; min-width: 45px; padding: 0 14px; border: none; font-size: 20px; font-weight: 900;">
+                            ⏭︎
                         </button>` : ''}
                     </div>
                 </div>`;
@@ -1295,8 +1284,8 @@
                                     <span style="margin-left: 8px; color: #000;">(${days} DAYS)</span>
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
-                                    <button onclick="editItem('${i.id}')" class="btn-text-link" style="border: none; padding: 4px 12px; font-size: 11px; font-weight: 900; letter-spacing: 1px;">⏮︎</button>
-                                    <button onclick="finishItem('${i.id}')" class="btn-off-action" style="border: none; padding: 4px 12px; font-size: 11px; font-weight: 900; letter-spacing: 1px;">⏸︎</button>
+                                    <button onclick="editItem('${i.id}')" class="btn-text-link" style="border: none; padding: 4px 12px; font-size: 14px; font-weight: 900; letter-spacing: 1px;">⏮︎</button>
+                                    <button onclick="finishItem('${i.id}')" class="btn-off-action" style="border: none; padding: 4px 12px; font-size: 14px; font-weight: 900; letter-spacing: 1px;">⏸︎</button>
                                 </div>
                             </div>
                         </div>`;
@@ -1337,8 +1326,8 @@
                                             <span style="opacity: 0.4;">EXP//</span> ${finalExp} ${isAutoExp ? '(*)' : ''}
                                         </div>
                                         <div style="display: flex; gap: 8px;">
-                                            <button onclick="editItem('${i.id}')" class="btn-text-link" style=" padding: 4px 12px; font-size: 11px;">⏮︎</button>
-                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style=" padding: 4px 12px; font-size: 11px;">⏭︎</button>
+                                            <button onclick="editItem('${i.id}')" class="btn-text-link" style=" padding: 4px 12px; font-size: 14px;">⏮︎</button>
+                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style=" padding: 4px 12px; font-size: 14px;">⏭︎</button>
                                         </div>
                                     </div>
                                 </div>`; // <-- 確保這裡有正確閉合
@@ -1504,7 +1493,7 @@
                         > EXP: ${finalExp} ${isAutoExp ? '(*)' : ''}
                     </div>
                 </div>
-                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; padding: 8px 16px; font-weight:900; cursor:pointer;">☑︎</button>
+                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">⏭︎</button>
             </div>
         </div>`;
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
