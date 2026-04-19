@@ -1178,7 +1178,7 @@
                         ${!isUsing ? `
                         <button onclick="useItem('${i.id}'); doCheck();" class="btn-on-action" 
                                 style="display: flex; align-items: center; justify-content: center; height: 32px; min-width: 45px; padding: 0 14px; border: none; font-size: 11px; font-weight: 900;">
-                            ▶︎
+                            ⏭︎
                         </button>` : ''}
                     </div>
                 </div>`;
@@ -1281,7 +1281,7 @@
                                         </div>
                                         <div style="display: flex; gap: 8px;">
                                             <button onclick="editItem('${i.id}')" class="btn-text-link" style=" padding: 4px 12px; font-size: 11px;">⏮︎</button>
-                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style=" padding: 4px 12px; font-size: 11px;">▶</button>
+                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style=" padding: 4px 12px; font-size: 11px;">⏭︎</button>
                                         </div>
                                     </div>
                                 </div>`; // <-- 確保這裡有正確閉合
@@ -1447,7 +1447,7 @@
                         > EXP: ${finalExp} ${isAutoExp ? '(*)' : ''}
                     </div>
                 </div>
-                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">▶</button>
+                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">⏭︎</button>
             </div>
         </div>`;
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
