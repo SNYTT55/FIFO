@@ -253,19 +253,13 @@
         }
 
 
-        .btn-off-action:hover::after {
-            content: " OFF"; 
-            font-size: 8px;
-            margin-left: 4px;
-        }
-
 
         .btn-on-action {
             background:transparent !important; /* 背景變透明 */ 
             color: #000 !important;
             border: none;
             padding: 4px 8px;
-            font-size: 14px;
+            font-size: 16px;
             font-family: var(--sys-font);
             font-weight: 500;
             letter-spacing: 1px;
@@ -278,18 +272,23 @@
             -webkit-appearance: none;
         }
 
-        .btn-on-action:hover {
-            background:#ff0000  !important; /* 背景變透明 */ 
-            color: #fff !important;   /* 字體變紅（代表終止） */
-            }
+        .btn-on-action, .btn-off-action {
+            transition: transform 0.1s ease;
+        }
 
+       
+
+        .btn-on-action:active {
+            transform: scale(1.8); 
+            color:#ff0000 !important;
+        }
 
         .btn-text-link {
             background:transparent !important; /* 背景變透明 */ 
             color: #0208c4 !important;
             border: none;
             padding: 4px 8px;
-            font-size: 14px;
+            font-size: 16px;
             font-family: var(--sys-font);
             font-weight: 500;
             letter-spacing: 1px;
@@ -302,10 +301,11 @@
             -webkit-appearance: none ;
         }
 
-        .btn-text-link:hover {
-            background: #0208c4 !important; /* 防止 hover 時出現背景 */
-            color: #fff !important;
+        .btn-text-link:active {
+            transform: scale(1.8); 
+            color: #0208c4 !important;
         }
+
         /* 危險/清除按鈕 (帶有脈衝動畫) */
         .btn-danger { 
             background: #ff0000 ; 
@@ -335,7 +335,6 @@
             cursor: pointer;
         }
 
-        .btn-system-action:hover { background: #000; color: #fff; }
 
         /* --- 7. 特殊顯示區塊 --- */
         #archive-list {
@@ -416,12 +415,6 @@
             transition: all 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
         }
 
-        #entry-overlay div[onclick="closeEntry()"]:hover {
-            background: #ff0000 !important;
-            color: #fff !important;         /* 字體變紅（代表終止） */
-            border: 2px solid #ff0000 !important; /* 邊框顯現 */
-            transform: scale(0.95);             /* 輕微縮小感 */
-        }
 
         #entry-overlay div[onclick="closeEntry()"]:active {   
             background: transparent !important; /* 背景變透明 */
@@ -545,10 +538,7 @@
             transition: color 0.2s;
         }
 
-        /* 懸停時，模擬「按下去」的感覺 */
-        .del-btn:hover, .dict-row b:hover {
-            color: #ff0000;
-        }
+
 
         /* --- 11. 手機端響應式微調 (RWD) --- */
         @media (max-width: 480px) {
@@ -561,22 +551,7 @@
                 text-overflow: ellipsis;
             }
         }
-        /* 電腦端：維持滑鼠滑入的效果 */
-        @media (hover: hover) {
-            .btn-save-protocol:hover {
-                background: #333;
-                color: #fff;
-            }
-        }
-        
-        /* 手機端：改用「按下去」的收縮感 */
-        @media (hover: none) {
-            .btn-save-protocol:active {
-                transform: scale(0.95); /* 按下去會微微縮小 5% */
-                opacity: 0.7;           /* 變透明一點 */
-                transition: 0.1s;
-            }
-        }
+
         .btn-drop-protocol {
             cursor: pointer;
             text-align: center;
@@ -593,13 +568,6 @@
             text-decoration: underline; /* 增加底線，看起來像個小連結 */
         }
 
-        .btn-drop-protocol:hover {
-            color: #ff0000 !important;      /* 懸停才變紅 */
-            background: #fff0f0 !important; /* 淡淡的紅底 */
-            font-weight: 900;               /* 變粗體提示 */
-            text-decoration: none;
-            letter-spacing: 1px;            /* 緊縮感，像是在警告 */
-        }
     </style>
 </head>
 <body>
@@ -1267,7 +1235,7 @@
                         ${!isUsing ? `
                         <button onclick="useItem('${i.id}'); doCheck();" class="btn-on-action" 
                                 style="display: flex; align-items: center; justify-content: center; height: 32px; min-width: 45px; padding: 0 14px; border: none; font-size: 11px; font-weight: 900;">
-                            ⏭︎
+                            ✔
                         </button>` : ''}
                     </div>
                 </div>`;
@@ -1536,7 +1504,7 @@
                         > EXP: ${finalExp} ${isAutoExp ? '(*)' : ''}
                     </div>
                 </div>
-                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">⏭︎</button>
+                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; padding: 8px 16px; font-weight:900; cursor:pointer;">☑︎</button>
             </div>
         </div>`;
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
