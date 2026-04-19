@@ -8,6 +8,7 @@
     <meta name="format-detection" content="date=no">
     <meta name="format-detection" content="address=no">
     <meta name="format-detection" content="email=no">
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <title>🗂️FILE</title>
     <style>
         /* --- 1. 核心系統規範與重置 --- */
@@ -695,8 +696,24 @@
         <div class="form-group"><label>EXPIRY_DATE</label><input type="text" id="in-exp" placeholder="YYYYMMDD" inputmode="numeric"></div>
     </div>
     <div class="form-row">
-        <div class="form-group"><label>BARCODE</label><input type="text" id="in-bar"></div>
-        <div class="form-group"><label>TAGS</label><input type="text" id="in-tag"></div>
+        <div class="form-group" style="flex: 1;">
+            <label>BARCODE</label>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <input type="text" id="in-bar" style="flex: 1;">
+                <button onclick="toggleScanner()" 
+                        style="background: transparent; color: #fff; border: none; padding: 0 12px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: 16px;">📷</span>
+                </button>
+            </div>
+        </div>
+        <div class="form-group" style="flex: 1;"><label>TAGS</label><input type="text" id="in-tag"></div>
+    </div>
+
+    <div id="qr-reader-container" style="display: none; margin-bottom: 20px; width: 100%; border: 2px solid #000; overflow: hidden; background: #000;">
+        <div id="qr-reader" style="width: 100%;"></div>
+        <div style="text-align: center; background: #000; color: #fff; font-size: 10px; padding: 5px;" class="mono">
+            [ SCANNING_MODE_ACTIVE ]
+        </div>
     </div>
     <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
         <button class="btn-save-protocol" onclick="saveEntry()">
@@ -727,6 +744,60 @@
     let cfg = JSON.parse(localStorage.getItem(STORE_CFG) || '{"cats":"","subCats":""}');
     let activeCat = "";
 
+    let scannerInstance = null;
+
+    async function toggleScanner() {
+        const container = document.getElementById('qr-reader-container');
+        const barcodeInput = document.getElementById('in-bar');
+
+        // 1. 如果掃描器正在運行，則關閉它
+        if (scannerInstance) {
+            await stopScanner();
+            return;
+        }
+
+        // 2. 顯示掃描器容器
+        container.style.display = 'block';
+
+        // 3. 初始化掃描器
+        scannerInstance = new Html5Qrcode("qr-reader");
+
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 120 }, // 針對條碼優化的長方框
+            aspectRatio: 1.777778 
+        };
+
+        scannerInstance.start(
+            { facingMode: "environment" }, // 使用後鏡頭
+            config,
+            (decodedText) => {
+                // 成功掃描後的動作
+                barcodeInput.value = decodedText;
+                
+                // 手機震動回饋 (選用)
+                if (navigator.vibrate) navigator.vibrate(100);
+                
+                // 自動關閉掃描器
+                stopScanner();
+            },
+            (errorMessage) => {
+                // 掃描中... 靜默處理
+            }
+        ).catch(err => {
+            console.error("相機啟動失敗:", err);
+            alert("無法啟動相機。請確保在 HTTPS 環境下使用，並已授予權限。");
+            container.style.display = 'none';
+        });
+    }
+
+    async function stopScanner() {
+        if (scannerInstance) {
+            await scannerInstance.stop();
+            scannerInstance = null;
+        }
+        document.getElementById('qr-reader-container').style.display = 'none';
+    }
     function save() { 
         localStorage.setItem(STORE_DB, JSON.stringify(db)); 
         localStorage.setItem(STORE_CFG, JSON.stringify(cfg)); 
