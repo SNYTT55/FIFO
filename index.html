@@ -561,6 +561,22 @@
                 text-overflow: ellipsis;
             }
         }
+        /* 電腦端：維持滑鼠滑入的效果 */
+        @media (hover: hover) {
+            .btn-save-protocol:hover {
+                background: #333;
+                color: #fff;
+            }
+        }
+        
+        /* 手機端：改用「按下去」的收縮感 */
+        @media (hover: none) {
+            .btn-save-protocol:active {
+                transform: scale(0.95); /* 按下去會微微縮小 5% */
+                opacity: 0.7;           /* 變透明一點 */
+                transition: 0.1s;
+            }
+        }
         .btn-drop-protocol {
             cursor: pointer;
             text-align: center;
@@ -681,28 +697,33 @@
         <h2 class="mono" id="form-title" style="margin:0; font-size: 22px;">NEW_ENTRY_LOG</h2>
         <div onclick="closeEntry()" style="cursor:pointer; font-weight:900; color:#ff0000; padding:4px 12px; font-size:12px;">✘</div>
     </div>
+
     <input type="hidden" id="edit-id">
+
     <div class="form-row">
         <div class="form-group"><label>CATEGORY</label><select id="in-cat" onchange="updateInSubOptions()"></select></div>
         <div class="form-group"><label>SUB_CAT</label><select id="in-sub"><option value="未分類">┈</option></select></div>
         <div class="form-group"><label>STATUS</label><select id="in-status"><option value="庫存">STOCK</option><option value="使用中">USING</option></select></div>
     </div>
+
     <div class="form-row">
-        <div class="form-group" style="flex:2;"><label>PRODUCT_NAME</label><input type="text" id="in-name"></div>
+        <div class="form-group" style="flex:1;"><label>PRODUCT_NAME</label><input type="text" id="in-name"></div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group" style="flex:2;"><label>BUY_DATE</label><input type="text" id="in-buy" placeholder="YYYYMMDD" inputmode="numeric"></div>
+        <div class="form-group" style="flex:2;"><label>EXPIRY_DATE</label><input type="text" id="in-exp" placeholder="YYYYMMDD" inputmode="numeric"></div>
         <div class="form-group" style="flex:1;"><label>QTY</label><input type="number" id="in-qty" value="1" min="1" inputmode="numeric"></div>
     </div>
+
     <div class="form-row">
-        <div class="form-group"><label>BUY_DATE</label><input type="text" id="in-buy" placeholder="YYYYMMDD" inputmode="numeric"></div>
-        <div class="form-group"><label>EXPIRY_DATE</label><input type="text" id="in-exp" placeholder="YYYYMMDD" inputmode="numeric"></div>
-    </div>
-    <div class="form-row">
-        <div class="form-group" style="flex: 1;">
+        <div class="form-group" style="flex: 1.5;">
             <label>BARCODE</label>
             <div style="display: flex; gap: 5px; align-items: center;">
                 <input type="text" id="in-bar" style="flex: 1;">
                 <button onclick="toggleScanner()" 
-                        style="background: transparent; color: #fff; border: none; padding: 0 12px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                    <span style="font-size: 16px;">📷</span>
+                        style="background: transparent ; color: #fff; border: none; padding: 0 10px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: 14px;">📷</span>
                 </button>
             </div>
         </div>
@@ -711,19 +732,15 @@
 
     <div id="qr-reader-container" style="display: none; margin-bottom: 20px; width: 100%; border: 2px solid #000; overflow: hidden; background: #000;">
         <div id="qr-reader" style="width: 100%;"></div>
-        <div style="text-align: center; background: #000; color: #fff; font-size: 10px; padding: 5px;" class="mono">
-            [ SCANNING_MODE_ACTIVE ]
-        </div>
+        <div style="text-align: center; background: #000; color: #fff; font-size: 10px; padding: 5px;" class="mono">[ SCANNING_MODE_ACTIVE ]</div>
     </div>
-    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+
+    <div style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 15px;">
         <button class="btn-save-protocol" onclick="saveEntry()">
             <span>SAVE_AND_PRINT</span>
         </button>
-
-        <div id="drop-zone" style="display: none; width: 100%; margin-top: 40px;">
-            <div onclick="deleteItem()" class="btn-drop-protocol">
-                TERMINATE_DATA_PROTOCOL
-            </div>
+        <div id="drop-zone" style="display: none; width: 100%; margin-top: 30px;">
+            <div onclick="deleteItem()" class="btn-drop-protocol">TERMINATE_DATA_PROTOCOL</div>
         </div>
     </div>
 </div>
