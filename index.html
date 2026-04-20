@@ -1329,6 +1329,7 @@
             </div>
         </details>`;
     container.innerHTML = usingSection + stockSection;
+    renderArchiveLog();
 }
 
     function refresh() {
@@ -1490,6 +1491,54 @@
         </div>`;
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
 }
+
+    function renderArchiveLog() {
+        const archiveContainer = document.getElementById('archive-list');
+        if (!archiveContainer) return;
+
+        const finishedItems = db.filter(i => i.status === '已用完');
+        finishedItems.sort((a, b) => (b.finishDate || "").localeCompare(a.finishDate || ""));
+
+        if (finishedItems.length === 0) {
+            archiveContainer.innerHTML = `<div class="mono" style="color: #111;">> NO_LOG_ENTRIES</div>`;
+            return;
+        }
+
+        archiveContainer.innerHTML = `
+            <div style="
+                background: #000; 
+                padding: 20px; 
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+                -webkit-font-smoothing: none; 
+                -moz-osx-font-smoothing: grayscale;
+                border-left: 2px solid #002200;
+            ">
+                ${finishedItems.map(i => {
+                    const rawDate = (i.finishDate || '00000000').replace(/-/g, '');
+                    
+                    return `
+                    <div style="margin-bottom: 2px; display: flex; align-items: baseline; letter-spacing: -0.5px;">
+                        <span style="color: #004400; font-size: 11px; margin-right: 15px;">${rawDate}</span>
+                        <span style="
+                            color: #006600; 
+                            font-size: 11px; 
+                            opacity: 0.5; 
+                            flex-grow: 1;
+                            /* 💡 讓字體看起來更緊湊、不那麼精緻 */
+                            text-transform: uppercase;
+                        ">
+                            ${i.name}
+                        </span>
+                        <span style="color: #002200; font-size: 9px;">[X]</span>
+                    </div>
+                    `;
+                }).join('')}
+                <div style="color: #002200; font-size: 9px; margin-top: 20px; border-top: 1px solid #050505;">
+                    RAW_DATA_DUMP_COMPLETE
+                </div>
+            </div>
+        `;
+    }
 
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
