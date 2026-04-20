@@ -235,8 +235,8 @@
         }
 
         .btn-off-action {
-            background: #000 !important;
-            color: #fff !important;
+            background: transparent !important;
+            color: #ff0000 !important;
             border: none;
             padding: 4px 14px;
             font-size: 10px;
@@ -421,15 +421,16 @@
             height: 75px; 
             margin: 40px auto 10px auto; 
             background: repeating-linear-gradient(
-                90deg, #ddd, #ddd 1px, transparent 1px, transparent 6px,
-                #bbb 6px, #bbb 7px, transparent 7px, transparent 10px
+                90deg, #000, #000 1px, transparent 1px, transparent 6px,
+                #444 6px, #444 7px, transparent 7px, transparent 10px
             );
             position: relative;
             transition: all 0.2s ease;
         }
 
         .btn-save-protocol span {
-            background: #fff;
+            background: #000;
+            color:#fff !important;   
             padding: 12px 28px;
             font-family: var(--sys-font);
             font-weight: 900;
@@ -441,28 +442,6 @@
             white-space: nowrap;
         }
 
-        .btn-save-protocol:active {
-            background: repeating-linear-gradient(
-                90deg, #000, #000 1px, transparent 1px, transparent 6px,
-                #444 6px, #444 7px, transparent 7px, transparent 10px
-            );
-        }
-
-        .btn-save-protocol:active span {
-            background: #000;
-            color: #fff;
-            transform: translate(2px, 2px);
-        }
-
-        .btn-save-protocol::after {
-            content: "V E R I F I E D _ L O G";
-            position: absolute;
-            bottom: -5px;
-            font-size: 7px;
-            letter-spacing: 3px;
-            color: #ccc;
-            font-family: var(--sys-font);
-        }
 
         /* 確保辭典清單有固定高度且邊框紮實 */
         .dict-list-box {
@@ -546,11 +525,11 @@
             font-family: var(--sys-font);
             font-size: 9px;         /* 縮小字體 */
             font-weight: 400;       /* 變細 */
-            color: #e0e0e053;         /* 平常是極淡的灰色 */
+            color: #ff0000;         /* 平常是極淡的灰色 */
             border: none;           /* 移除邊框 */
             background: transparent;
             padding: 10px;
-            margin-top: 50px;       /* 增加間距，推到最底部 */
+            margin-top: 30px;       /* 增加間距，推到最底部 */
             transition: all 0.3s ease;
             letter-spacing: 3px;
             text-decoration: underline; /* 增加底線，看起來像個小連結 */
@@ -652,7 +631,7 @@
 <div id="entry-overlay">
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:25px; border-bottom: 6px solid #000; padding-bottom: 10px;">
         <h2 class="mono" id="form-title" style="margin:0; font-size: 22px;">NEW_ENTRY_LOG</h2>
-        <div onclick="closeEntry()" style="cursor:pointer; font-weight:900; color:#ff0000; padding:4px 12px; font-size:12px;">✘</div>
+        <div onclick="closeEntry()" style="cursor:pointer; color:#ff0000 ; font-weight:900; border:1px solid #ff0000; padding:4px 12px; font-size:12px;">✘</div>
     </div>
 
     <input type="hidden" id="edit-id">
@@ -1284,8 +1263,8 @@
                                     <span style="margin-left: 8px; color: #000;">(${days} DAYS)</span>
                                 </div>
                                 <div style="display: flex; gap: 8px; align-items: center;">
-                                    <button onclick="editItem('${i.id}')" class="btn-text-link" style="border: none; padding: 4px 12px; font-size: 14px; font-weight: 900; letter-spacing: 1px;">⏮︎</button>
-                                    <button onclick="finishItem('${i.id}')" class="btn-off-action" style="border: none; padding: 4px 12px; font-size: 14px; font-weight: 900; letter-spacing: 1px;">⏸︎</button>
+                                    <button onclick="editItem('${i.id}')" class="btn-text-link" style="border: none; padding: 4px 12px; font-size: 16px; font-weight: 900; letter-spacing: 1px;">⏮︎</button>
+                                    <button onclick="finishItem('${i.id}')" class="btn-off-action" style="border: none; padding: 4px 12px; font-size: 16px; font-weight: 900; letter-spacing: 1px;">⏹︎</button>
                                 </div>
                             </div>
                         </div>`;
@@ -1326,8 +1305,8 @@
                                             <span style="opacity: 0.4;">EXP//</span> ${finalExp} ${isAutoExp ? '(*)' : ''}
                                         </div>
                                         <div style="display: flex; gap: 8px;">
-                                            <button onclick="editItem('${i.id}')" class="btn-text-link" style=" padding: 4px 12px; font-size: 14px;">⏮︎</button>
-                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style=" padding: 4px 12px; font-size: 14px;">⏭︎</button>
+                                            <button onclick="editItem('${i.id}')" class="btn-text-link" style=" padding: 4px 12px; font-size: 16px;">⏮︎</button>
+                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style=" padding: 4px 12px; font-size: 16px;">⏭︎</button>
                                         </div>
                                     </div>
                                 </div>`; // <-- 確保這裡有正確閉合
@@ -1493,7 +1472,7 @@
                         > EXP: ${finalExp} ${isAutoExp ? '(*)' : ''}
                     </div>
                 </div>
-                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="background:#000; color:#fff; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">⏭︎</button>
+                <button onclick="quickUse('${i.id}')" class="btn-on-action" style="color: #ff0000 !important ; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">✔</button>
             </div>
         </div>`;
     }).join('') : `<div class="mono" style="padding:30px; text-align:center; color:#aaa; border:1px dashed #aaa;">[ DATABASE_QUERY_EMPTY ]</div>`;
