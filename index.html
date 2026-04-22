@@ -1114,101 +1114,108 @@
     });
 }
 
-    function doCheck() {
-        const q = document.getElementById('check-input').value.trim().toLowerCase();
-        const res = document.getElementById('check-result');
-        if(!q) { res.innerHTML = ""; return; }
-        
-        // 取得今天日期（格式：YYYY-MM-DD）
-        const today = new Date().toISOString().split('T')[0];
-        
-        // 1. 核心過濾與排序
-        const activeItems = db.filter(i => i.status !== '已用完').sort((a, b) => {
-            return (b.status === '使用中') - (a.status === '使用中');
-        });
+function doCheck() {
+    const q = document.getElementById('check-input').value.trim().toLowerCase();
+    const res = document.getElementById('check-result');
+    if (!q) { res.innerHTML = ""; return; }
 
-        // 2. 搜尋機制
-        let matches = activeItems.filter(i => {
-            // 建立一個安全轉換字串的 helper
-            const s = (f) => {
-                const val = i[f] ?? ""; 
-                return String(val).toLowerCase(); // 強制轉成字串，解決數字 barcode 無法 toLowerCase 的問題
-            };
-        
-            // 搜尋輸入框的值 (q 已經在前面處理過 trim() 與 toLowerCase())
-            return s('name').includes(q) || 
-                   s('barcode').includes(q) || 
-                   s('tags').includes(q) || 
-                   s('subCat').includes(q) ||
-                   s('category').includes(q); // 增加 category 確保大分類也能被查到
-        });
-        
-        let isDiscoveryMode = false;
-        if (matches.length === 0) {
-            matches = activeItems.filter(i => {
-                const s = (f) => (i[f] || "").toLowerCase() + (i['category'] || "").toLowerCase();
-                return s.includes(q);
-            });
-            if (matches.length > 0) isDiscoveryMode = true;
+    // 取得今天日期
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. 核心過濾：排除已用完的，並依狀態排序
+    const activeItems = db.filter(i => i && i.status !== '已用完').sort((a, b) => {
+        return (b.status === '使用中') - (a.status === '使用中');
+    });
+
+    // 判斷搜尋模式：是否為純數字
+    const isPureNumber = /^\d+$/.test(q);
+
+    // 2. 搜尋機制
+    let isDiscoveryMode = false;
+    let matches = activeItems.filter(i => {
+        const getBarcode = String(i.barcode ?? "").toLowerCase();
+        const getName = String(i.name ?? "").toLowerCase();
+        const getTags = String(i.tags ?? "").toLowerCase();
+        const getSubCat = String(i.subCat ?? "").toLowerCase();
+        const getCat = String(i.category ?? "").toLowerCase();
+
+        if (isPureNumber) {
+            // 【數字模式】：僅搜尋條碼，支援「含後幾碼」搜尋
+            return getBarcode.includes(q);
+        } else {
+            // 【文字模式】：模糊搜尋各個欄位
+            return getName.includes(q) || getBarcode.includes(q) || getTags.includes(q) || getSubCat.includes(q);
         }
+    });
 
-        if (matches.length === 0) {
-            res.innerHTML = `<div style="color:#ff0000; padding:15px; border:1px dashed #000; margin-top:10px; font-size:10px; background:#fff;">[ STATUS: NO_MATCH_FOUND ]</div>`;
-            return;
-        }
-
-        const vCount = matches.filter(i => i.status === '庫存').length;
-        const uCount = matches.filter(i => i.status === '使用中').length;
-        const boardBg = isDiscoveryMode ? '#ff9800' : '#000';
-
-        res.innerHTML = `
-            <div style="background:${boardBg}; color:${isDiscoveryMode ? '#000' : '#fff'}; padding:15px; margin:10px 0 20px 0; display:flex; justify-content:space-between; align-items:center; box-shadow: 6px 6px 0px #eee;">
-                <div class="mono">
-                    <div style="font-size: 10px; opacity: 0.6; margin-bottom: 5px;">${isDiscoveryMode ? 'CATEGORY_MATCHED' : 'DATABASE_CHECK'}</div>
-                    <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">MATCHED: ${matches.length}</div>
-                </div>
-                <div class="mono" style="text-align:right; font-size: 10px; opacity: 0.8;">STOCK: ${vCount}<br>USING: ${uCount}</div>
-            </div>
-            
-            <div style="max-height: 400px; overflow-y: auto;">
-                ${matches.map(i => {
-                    const isUsing = i.status === '使用中';
-                    // 效期推算
-                    let finalExp = i.expiry || (i.buyDate ? `${parseInt(i.buyDate.split('-')[0]) + 3}-${i.buyDate.split('-')[1]}-${i.buyDate.split('-')[2]}` : "--");
-                    
-                    // 💡 判斷是否過期
-                    const isExpired = finalExp !== "--" && finalExp < today;
-                    const expColor = isExpired ? '#ff0000' : (isUsing ? '#000' : '#999');
-
-                    return `
-                    <div style="background: ${isUsing ? (isExpired ? '#fff0f0' : '#fffce7') : 'transparent'}; 
-                                border-bottom: 1.5px solid #000; 
-                                padding: 12px ${isUsing ? '10px' : '0'}; 
-                                margin-bottom: ${isUsing ? '8px' : '0'}; 
-                                display: flex; align-items: flex-start; gap: 10px;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
-                                ${isUsing ? '<span style="background:#000; color:#fff; font-size:8px; padding:1px 4px; font-weight:900;">ACTIVE</span>' : ''}
-                                ${isExpired ? '<span style="background:#ff0000; color:#fff; font-size:8px; padding:1px 4px; font-weight:900;">EXPIRED</span>' : ''}
-                                <span class="mono" style="font-size: 9px; border: 1px solid #ccc; color: #888; padding: 0 3px;">${i.subCat}</span>
-                                ${i.tags ? i.tags.split(',').map(tag => `<span class="mono" style="font-size: 9px; color: #000; font-weight:900;">#${tag.trim()}</span>`).join(' ') : ''}
-                            </div>
-                            <div class="mono" style="font-size: 15px; font-weight: 800; color: ${isExpired ? '#ff0000' : '#000'}; opacity: ${isUsing ? '1' : '0.8'};">
-                                ${isExpired ? '⚠️ ' : ''}${i.name}
-                            </div>
-                            <div class="mono" style="font-size: 10px; color: ${expColor}; margin-top: 4px; font-weight: ${isExpired ? '900' : 'normal'};">
-                                EXP: ${finalExp} ${isExpired ? '‼️' : ''}
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 8px; align-items: center; padding-top: 10px;">
-                            <button onclick="editItem('${i.id}')" style="border: none; background: transparent; cursor: pointer; font-size: 20px;">⏮︎</button>
-                            ${!isUsing ? `<button onclick="useItem('${i.id}'); doCheck();" style="height: 32px; min-width: 45px; border: none; background: #000; color: #fff; font-size: 20px; font-weight: 900;">⏭︎</button>` : ''}
-                        </div>
-                    </div>`;
-                }).join('')}
-            </div>
-        `;
+    // 3. 自動擴展搜尋 (Discovery Mode)：如果找不到，嘗試搜尋大分類
+    if (matches.length === 0 && !isPureNumber) {
+        matches = activeItems.filter(i => {
+            const getCat = String(i.category ?? "").toLowerCase();
+            return getCat.includes(q);
+        });
+        if (matches.length > 0) isDiscoveryMode = true;
     }
+
+    if (matches.length === 0) {
+        res.innerHTML = `<div style="color:#ff0000; padding:15px; border:1px dashed #000; margin-top:10px; font-size:10px; background:#fff;">[ STATUS: NO_MATCH_FOUND ]</div>`;
+        return;
+    }
+
+    // 4. 渲染結果
+    const vCount = matches.filter(i => i.status === '庫存').length;
+    const uCount = matches.filter(i => i.status === '使用中').length;
+    const boardBg = isDiscoveryMode ? '#ff9800' : '#000';
+
+    res.innerHTML = `
+        <div style="background:${boardBg}; color:${isDiscoveryMode ? '#000' : '#fff'}; padding:15px; margin:10px 0 20px 0; display:flex; justify-content:space-between; align-items:center; box-shadow: 6px 6px 0px #eee;">
+            <div class="mono">
+                <div style="font-size: 10px; opacity: 0.6; margin-bottom: 5px;">
+                    ${isPureNumber ? 'BARCODE_MODE' : (isDiscoveryMode ? 'CATEGORY_MATCHED' : 'DATABASE_CHECK')}
+                </div>
+                <div style="font-size: 28px; font-weight: 900; letter-spacing: -1px;">MATCHED: ${matches.length}</div>
+            </div>
+            <div class="mono" style="text-align:right; font-size: 10px; opacity: 0.8;">STOCK: ${vCount}<br>USING: ${uCount}</div>
+        </div>
+        
+        <div style="max-height: 400px; overflow-y: auto;">
+            ${matches.map(i => {
+                const isUsing = i.status === '使用中';
+                
+                // 效期推算
+                let finalExp = i.expiry || (i.buyDate ? `${parseInt(i.buyDate.split('-')[0]) + 3}-${i.buyDate.split('-')[1]}-${i.buyDate.split('-')[2]}` : "--");
+                const isExpired = finalExp !== "--" && finalExp < today;
+                const expColor = isExpired ? '#ff0000' : (isUsing ? '#000' : '#999');
+
+                return `
+                <div style="background: ${isUsing ? (isExpired ? '#fff0f0' : '#fffce7') : 'transparent'}; 
+                            border-bottom: 1.5px solid #000; 
+                            padding: 12px ${isUsing ? '10px' : '0'}; 
+                            margin-bottom: ${isUsing ? '8px' : '0'}; 
+                            display: flex; align-items: flex-start; gap: 10px;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap;">
+                            ${isUsing ? '<span style="background:#000; color:#fff; font-size:8px; padding:1px 4px; font-weight:900;">ACTIVE</span>' : ''}
+                            ${isExpired ? '<span style="background:#ff0000; color:#fff; font-size:8px; padding:1px 4px; font-weight:900;">EXPIRED</span>' : ''}
+                            <span class="mono" style="font-size: 9px; border: 1px solid #ccc; color: #888; padding: 0 3px;">${i.subCat}</span>
+                            ${i.tags ? i.tags.split(',').map(tag => `<span class="mono" style="font-size: 9px; color: #000; font-weight:900;">#${tag.trim()}</span>`).join(' ') : ''}
+                        </div>
+                        <div class="mono" style="font-size: 15px; font-weight: 800; color: ${isExpired ? '#ff0000' : '#000'}; opacity: ${isUsing ? '1' : '0.8'};">
+                            ${isExpired ? '⚠️ ' : ''}${i.name}
+                        </div>
+                        <div class="mono" style="font-size: 10px; color: ${expColor}; margin-top: 4px; font-weight: ${isExpired ? '900' : 'normal'};">
+                            EXP: ${finalExp} ${isExpired ? '‼️' : ''}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center; padding-top: 10px;">
+                        <button onclick="editItem('${i.id}')" style="border: none; background: transparent; cursor: pointer; font-size: 20px;">⏮︎</button>
+                        ${!isUsing ? `<button onclick="useItem('${i.id}'); doCheck();" style="height: 32px; min-width: 45px; border: none; background: #000; color: #fff; font-size: 20px; font-weight: 900;">⏭︎</button>` : ''}
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>
+    `;
+}
 
     function renderVault() {
     const container = document.getElementById('vault-shelves-container');
