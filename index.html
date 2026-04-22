@@ -1129,10 +1129,20 @@
 
         // 2. 搜尋機制
         let matches = activeItems.filter(i => {
-            const s = (f) => (i[f] || "").toLowerCase();
-            return s('name').includes(q) || s('barcode').includes(q) || s('tags').includes(q) || s('subCat').includes(q);
+            // 建立一個安全轉換字串的 helper
+            const s = (f) => {
+                const val = i[f] ?? ""; 
+                return String(val).toLowerCase(); // 強制轉成字串，解決數字 barcode 無法 toLowerCase 的問題
+            };
+        
+            // 搜尋輸入框的值 (q 已經在前面處理過 trim() 與 toLowerCase())
+            return s('name').includes(q) || 
+                   s('barcode').includes(q) || 
+                   s('tags').includes(q) || 
+                   s('subCat').includes(q) ||
+                   s('category').includes(q); // 增加 category 確保大分類也能被查到
         });
-
+        
         let isDiscoveryMode = false;
         if (matches.length === 0) {
             matches = activeItems.filter(i => {
