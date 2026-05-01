@@ -9,7 +9,7 @@
     <meta name="format-detection" content="address=no">
     <meta name="format-detection" content="email=no">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <title>🗂️FILE</title>
+    <title>🗂️</title>
     <style>
         /* --- 1. 核心系統規範與重置 --- */
         :root { 
@@ -960,30 +960,26 @@
     }   
 
     function saveEntry() {
-        const eid = document.getElementById('edit-id').value;
-        const cat = document.getElementById('in-cat').value;
-            if(!cat) return alert("請先選擇大分類項目");
-        const qty = parseInt(document.getElementById('in-qty').value) || 1;
-        const baseName = document.getElementById('in-name').value;
-            if(!baseName) return alert("MISSING_NAME");
-        const newItem = {
-            id: String(Date.now()), // 關鍵：強制轉為字串
-            name: baseName,
-            // ... 其他欄位
-        };
-        // --- 核心改動：日期格式化邏輯 ---
-        const toStandardDate = (val) => {
-            let clean = val.replace(/\D/g, ''); // 移除所有非數字
-            if (clean.length === 8) {
-                return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
-            }
-            return val; // 如果不是8碼（可能已經是 YYYY-MM-DD），就維持原樣
-        };
-        const data = {
-        category: document.getElementById('in-cat').value,
+    const eid = document.getElementById('edit-id').value;
+    const cat = document.getElementById('in-cat').value;
+    if(!cat) return alert("請先選擇大分類項目");
+    
+    const qty = parseInt(document.getElementById('in-qty').value) || 1;
+    const baseName = document.getElementById('in-name').value;
+    if(!baseName) return alert("MISSING_NAME");
+
+    const toStandardDate = (val) => {
+        let clean = val.replace(/\D/g, ''); 
+        if (clean.length === 8) {
+            return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
+        }
+        return val;
+    };
+
+    const data = {
+        category: cat,
         subCat: document.getElementById('in-sub').value || "未分類",
         tags: document.getElementById('in-tag').value,
-        // 儲存前強制格式化
         buyDate: toStandardDate(document.getElementById('in-buy').value),
         expiry: toStandardDate(document.getElementById('in-exp').value),
         barcode: document.getElementById('in-bar').value,
@@ -994,10 +990,17 @@
         const idx = db.findIndex(x => x.id == eid);
         if(idx !== -1) db[idx] = { ...db[idx], ...data, name: baseName };
     } else {
+        const timestamp = Date.now(); // 取得統一的時間基準
         for(let i=0; i<qty; i++) {
-            const newName = qty > 1 ? `${baseName} (${i+1}/${qty})` : baseName;
-            // 確保新生成的 ID 也是字串格式，方便後續比對
-            db.push({ id: String(Date.now() + i), name: newName, ...data });
+            // 💡 自動補零邏輯：如果總數 >= 10，則編號補為兩位數 (01, 02...)
+            const currentNum = String(i + 1).padStart(qty >= 10 ? 2 : 1, '0');
+            const newName = qty > 1 ? `${baseName} (${currentNum}/${qty})` : baseName;
+            
+            db.push({ 
+                id: String(timestamp + i), // 確保 ID 隨 i 遞增，排序更穩定
+                name: newName, 
+                ...data 
+            });
         }
     }
     save(); closeEntry(); refresh();
@@ -1148,6 +1151,12 @@ function doCheck() {
         }
     });
 
+    matches.sort((a, b) => {
+    // 優先比狀態（使用中排前面），次要比名稱（1 > 2 > 10）
+    if (a.status !== b.status) return (b.status === '使用中') - (a.status === '使用中');
+    return a.name.localeCompare(b.name, undefined, { numeric: true });
+});
+
     // 3. 自動擴展搜尋 (Discovery Mode)：如果找不到，嘗試搜尋大分類
     if (matches.length === 0 && !isPureNumber) {
         matches = activeItems.filter(i => {
@@ -1204,12 +1213,12 @@ function doCheck() {
                             ${isExpired ? '⚠️ ' : ''}${i.name}
                         </div>
                         <div class="mono" style="font-size: 10px; color: ${expColor}; margin-top: 4px; font-weight: ${isExpired ? '900' : 'normal'};">
-                            EXP: ${finalExp} ${isExpired ? '‼️' : ''}
+                            EXP:${finalExp} ${isExpired ? '‼️' : ''}
                         </div>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; padding-top: 10px;">
-                        <button onclick="editItem('${i.id}')" style="border: none; background: transparent; cursor: pointer; font-size: 20px;">⏮︎</button>
-                        ${!isUsing ? `<button onclick="useItem('${i.id}'); doCheck();" style="height: 32px; min-width: 45px; border: none; background: #000; color: #fff; font-size: 20px; font-weight: 900;">⏭︎</button>` : ''}
+                        <button onclick="editItem('${i.id}')" style="border: none; background: transparent; cursor: pointer; font-size: 18px;">⏮︎</button>
+                        ${!isUsing ? `<button onclick="useItem('${i.id}'); doCheck();" style="height: 32px; min-width: 45px; border: none; background: #000; color: #fff; font-size: 18px; font-weight: 900;">⏭︎</button>` : ''}
                     </div>
                 </div>`;
             }).join('')}
@@ -1217,49 +1226,63 @@ function doCheck() {
     `;
 }
 
-    function renderVault() {
+function renderVault() {
     const container = document.getElementById('vault-shelves-container');
+    
+    // 1. 處理【使用中】項目：按開啟日期排序 (早開的排前面)
     const usingItems = db.filter(i => i.status === '使用中');
-        usingItems.sort((a, b) => {
-            const dateA = a.openDate || "9999-12-31";
-            const dateB = b.openDate || "9999-12-31";
-            return dateA.localeCompare(dateB);
-        });
+    usingItems.sort((a, b) => {
+        const dateA = a.openDate || "9999-12-31";
+        const dateB = b.openDate || "9999-12-31";
+        return dateA.localeCompare(dateB);
+    });
+
+    // 2. 處理【庫存】項目：關鍵排序邏輯
     const activeItems = db.filter(i => i.status === '庫存');
-        activeItems.sort((a, b) => {
+    activeItems.sort((a, b) => {
         const getExp = (item) => {
             if (item.expiry) return item.expiry;
-            if (item.buyDate) {
+            if (item.buyDate && item.buyDate.includes('-')) {
                 const p = item.buyDate.split('-');
                 return `${parseInt(p[0]) + 3}-${p[1]}-${p[2]}`;
             }
             return "9999-12-31";
         };
-        return getExp(a).localeCompare(getExp(b));
+
+        const expA = getExp(a);
+        const expB = getExp(b);
+
+        // A. 優先比對效期
+        if (expA !== expB) {
+            return expA.localeCompare(expB);
+        } else {
+            // B. 效期相同時，啟用【自然數值排序】比對名稱
+            // 這能確保庫存區也遵循 01 > 02 > 10
+            return a.name.localeCompare(b.name, undefined, { numeric: true });
+        }
     });
+
+    // 將庫存依大類分組
     const grouped = activeItems.reduce((acc, item) => {
         if (!acc[item.category]) acc[item.category] = [];
         acc[item.category].push(item);
         return acc;
     }, {});
 
+    const today = new Date().toISOString().split('T')[0];
+
+    // --- 渲染使用中部分 (保持你原本的精美樣式) ---
     let usingSection = "";
     if (usingItems.length > 0) {
-        // 取得今天日期比對效期
-        const today = new Date().toISOString().split('T')[0];
-
         usingSection = `
-            <div class="shelf-container" >
-                <div class="shelf-label" style="background: #000; color: #fffce7; -webkit-text-fill-color: #fffce7 !important;">ACTIVE_USING_LOG</div>
+            <div class="shelf-container">
+                <div class="shelf-label" style="background: #000; color: #fffce7;">ACTIVE_USING_LOG</div>
                 <div style="padding-top: 10px;">
                     ${usingItems.map(i => {
-                        const displayOpenDate = i.openDate || "N/A";
                         const days = i.openDate ? Math.floor((new Date() - new Date(i.openDate)) / (1000 * 60 * 60 * 24)) : 0;
-
-                        // 💡 效期推算與過期判斷
                         const finalExp = i.expiry || (i.buyDate ? `${parseInt(i.buyDate.split('-')[0]) + 3}-${i.buyDate.split('-')[1]}-${i.buyDate.split('-')[2]}` : "--");
                         const isExpired = finalExp !== "--" && finalExp < today;
-
+                        
                         return `
                         <div class="item-line" style="flex-direction: column; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(0,0,0,0.1); background: ${isExpired ? 'rgba(255,0,0,0.05)' : 'rgba(255, 247, 5, 0.11)'};">
                             <div style="width: 100%; display: flex; align-items: flex-start; line-height: 1;">
@@ -1268,22 +1291,17 @@ function doCheck() {
                                     ${isExpired ? '⚠️ ' : ''}${i.name}
                                 </span>
                             </div>
-
                             <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-top: -15px;">
-                                <div class="mono" style="font-size: 10px; line-height: 1.2;">
+                                <div class="mono" style="font-size: 10px;">
                                     <div style="margin-top: 6px;">
                                         <span style="color: #999;">⏭︎⏭︎</span> 
-                                        <span style="${isExpired ? 'background:#ff0000; color:#fff; padding:0 4px; font-weight:900;' : 'color:#666;'}">
-                                            ${finalExp} ${isExpired ? '❕' : ''}
-                                        </span> 
-
-                                        <span style="background:transparent; color:#666; font-size: 10px; font-weight: bold;">(<span style="font-size: 16px; color: #ff0000; font-weight: 900; line-height: 1;">${days}</span>days)</span>
+                                        <span style="${isExpired ? 'background:#ff0000; color:#fff; padding:0 4px;' : 'color:#666;'}">${finalExp}</span> 
+                                        <span style="color:#666; font-size: 10px; font-weight: bold;">(<span style="font-size: 16px; color: #ff0000; font-weight: 900;">${days}</span>days)</span>
                                     </div>
                                 </div>
-
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <button onclick="editItem('${i.id}')" class="btn-text-link" style="border: none; padding: 4px 12px; font-size: 16px; font-weight: 900; letter-spacing: 1px;">⏮︎</button>
-                                    <button onclick="finishItem('${i.id}')" class="btn-off-action" style="border: none; padding: 4px 12px; font-size: 16px; font-weight: 900; letter-spacing: 1px;">⏹︎</button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="editItem('${i.id}')" class="btn-text-link" style="border: none; font-size: 16px;">⏮︎</button>
+                                    <button onclick="finishItem('${i.id}')" class="btn-off-action" style="border: none; font-size: 16px;">⏹︎</button>
                                 </div>
                             </div>
                         </div>`;
@@ -1292,6 +1310,7 @@ function doCheck() {
             </div>`;
     }
 
+    // --- 渲染庫存部分 (同步更新排序) ---
     let stockSection = `
         <details style="margin-top: 20px;">
             <summary class="mono" style="text-align: center; cursor: pointer; padding: 12px; background: #eee; border: 2px solid #000; list-style: none; font-size: 12px; letter-spacing: 2px;">
@@ -1303,42 +1322,33 @@ function doCheck() {
                         <div class="shelf-label" style="background: #888;">${cat.toUpperCase()}</div>
                         <div style="padding-top: 5px;">
                             ${grouped[cat].map(i => {
-                                // --- 1. 完全保留並補強你的日期計算邏輯 ---
                                 let finalExp = i.expiry;
                                 let isAutoExp = false;
                                 if (!finalExp || finalExp.trim() === "") {
                                     isAutoExp = true;
                                     if (i.buyDate && i.buyDate.includes('-')) {
-                                        const parts = i.buyDate.split('-');
-                                        finalExp = `${parseInt(parts[0]) + 3}-${parts[1]}-${parts[2]}`;
+                                        const p = i.buyDate.split('-');
+                                        finalExp = `${parseInt(p[0]) + 3}-${p[1]}-${p[2]}`;
                                     } else { finalExp = "--"; }
                                 }
-
-                                // --- 2. 新增：灰度判斷 (today 變數需在函數開頭定義) ---
-                                const today = new Date().toISOString().split('T')[0];
                                 const isExpired = finalExp !== "--" && finalExp < today;
-
-                                // --- 3. 補強：灰度化樣式 (過期則淡化，但不消失) ---
                                 const expiredStyle = isExpired ? 'opacity: 0.4; filter: grayscale(100%);' : '';
 
                                 return `
                                 <div class="item-line" style="flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 0; border-bottom: 1px solid #eee; ${expiredStyle}">
                                     <div style="width: 100%; display: flex; align-items: flex-start;">
                                         <span class="mono" style="font-size:9px; border:1px solid #888; padding:1px 4px; color:#888; white-space:nowrap; margin-top:2px;">${i.subCat}</span>
-                                        <span class="mono" style="font-size:15px; margin-left:8px; font-weight:900; word-break: break-all; flex: 1; line-height: 1.2; color: ${isExpired ? '#999' : '#000'};">
+                                        <span class="mono" style="font-size:15px; margin-left:8px; font-weight:900; word-break: break-all; flex: 1; color: ${isExpired ? '#999' : '#000'};">
                                             ${i.name}
                                         </span>
                                     </div>
-
                                     <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-end; margin-top: -10px;">
-                                        <div class="mono" style="font-size: 10px; color: ${isExpired ? '#ccc' : (isAutoExp ? '#ff9800' : '#000')}; letter-spacing: 0.5px; ">
-                                            <span style="opacity: 0.4;">EXP//</span> ${finalExp} 
-                                            ${isAutoExp ? '<span style="font-size:8px;">(*)</span>' : ''} 
-                                            ${isExpired ? '<span style="margin-left:5px;">[X]</span>' : ''}
+                                        <div class="mono" style="font-size: 10px; color: ${isExpired ? '#ccc' : (isAutoExp ? '#ff9800' : '#ccc')};">
+                                            <span style="opacity: 0.7; text-decoration: underline; ">EXP</span> ${finalExp} ${isAutoExp ? '(*)' : ''}
                                         </div>
                                         <div style="display: flex; gap: 8px;">
-                                            <button onclick="editItem('${i.id}')" class="btn-text-link" style="padding: 4px 12px; font-size: 16px;">⏮︎</button>
-                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style="padding: 4px 12px; font-size: 16px;">⏭︎</button>
+                                            <button onclick="editItem('${i.id}')" class="btn-text-link" style="font-size: 16px;">⏮︎</button>
+                                            <button onclick="useItem('${i.id}')" class="btn-on-action" style="font-size: 16px;">⏭︎</button>
                                         </div>
                                     </div>
                                 </div>`;
@@ -1347,11 +1357,30 @@ function doCheck() {
                     </div>`).join('')}
             </div>
         </details>`;
+
     container.innerHTML = usingSection + stockSection;
-    renderArchiveLog();
+    renderArchiveLog(); // 確保已用完日誌同步更新
 }
 
     function refresh() {
+        let needsSave = false;
+        db.forEach(item => {
+            // 正則表達式：尋找類似 (1/12) 但數字部分只有一位且總數大於等於 10 的情況
+            const match = item.name.match(/\((\d)\/(\d{2,})\)/);
+            if (match) {
+                const current = match[1]; // 取得原本的編號 如 "1"
+                const total = match[2];   // 取得原本的總數 如 "12"
+                // 將名稱替換為補零後的格式 (1/12) -> (01/12)
+                item.name = item.name.replace(`(${current}/${total})`, `(0${current}/${total})`);
+                needsSave = true;
+            }
+        });
+
+        if (needsSave) {
+            console.log("SYSTEM: OLD_DATA_UPGRADED_TO_NEW_FORMAT");
+            save(); // 修正後自動存檔
+        }
+        
         // 【自動遷移邏輯】如果 subCats 還是舊字串，進行智慧分配
         if (typeof cfg.subCats === 'string') {
             console.log("偵測到舊版子分類格式，正在啟動自動遷移...");
@@ -1474,7 +1503,16 @@ function doCheck() {
             }
             return "9999-12-31";
         };
-        return getExp(a).localeCompare(getExp(b));
+
+        const expA = getExp(a);
+        const expB = getExp(b);
+
+        if (expA !== expB) {
+            return expA.localeCompare(expB); // 第一優先：比效期
+        } else {
+            // 第二優先：效期相同比名稱 (支援自然數值排序，如 1 < 10)
+            return a.name.localeCompare(b.name, undefined, { numeric: true });
+        }
     });
 
     const top3 = items.slice(0, 3);
@@ -1502,7 +1540,7 @@ function doCheck() {
                     <span class="mono" style="font-size: 10px; border: 1px solid #ccc; padding: 1px 4px; color: #666; background: #f4f4f4;">${i.subCat}</span>
                     <span class="mono" style="font-size: 15px; font-weight:900; margin-left: 8px;">${i.name}</span>
                     <div class="mono" style="font-size: 10px; color: ${isAutoExp ? '#ff9800' : '#aaa'}; margin-top: 6px; font-weight: bold;">
-                        > EXP: ${finalExp} ${isAutoExp ? '⁉️' : ''}
+                        > EXP:${finalExp} ${isAutoExp ? '⁉️' : ''}
                     </div>
                 </div>
                 <button onclick="quickUse('${i.id}')" class="btn-on-action" style="color: #ff0000 !important ; border:none; padding: 8px 16px; font-weight:900; cursor:pointer;">✔</button>
