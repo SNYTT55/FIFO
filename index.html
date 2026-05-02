@@ -558,7 +558,7 @@
     <div style="margin-top: 10px;">
         <div class="form-row" style="margin-bottom: 15px; display: flex; gap: 10px;">
             <select id="pick-cat" onchange="updatePickSub()" style="flex: 1;"></select>
-            <select id="pick-sub" onchange="getRecommended()" disabled style="flex: 1;"><option value="">┈473</option></select>
+            <select id="pick-sub" onchange="getRecommended()" disabled style="flex: 1;"><option value="">┈┈┈┈</option></select>
         </div>
         <div id="recommend-area"></div>
     </div>
@@ -958,8 +958,8 @@
         }
         return inputVal; // 如果長度不對，就回傳原值
     }   
-
-    function saveEntry() {
+    
+function saveEntry() {
     const eid = document.getElementById('edit-id').value;
     const cat = document.getElementById('in-cat').value;
     if(!cat) return alert("請先選擇大分類項目");
@@ -976,12 +976,25 @@
         return val;
     };
 
+    // 取得標準化後的日期進行檢查
+    const checkExp = toStandardDate(document.getElementById('in-exp').value);
+    if (checkExp !== "" && checkExp.includes('-')) {
+        const d = new Date(checkExp);
+        const inputMonth = checkExp.split('-')[1];
+        const actualMonth = String(d.getMonth() + 1).padStart(2, '0');
+        
+        if (isNaN(d.getTime()) || inputMonth !== actualMonth) {
+            alert("CRITICAL_ERROR: 日期格式無效，請確認 YYYYMMDD 是否正確");
+            return;
+        }
+    }        
+        
     const data = {
         category: cat,
         subCat: document.getElementById('in-sub').value || "未分類",
         tags: document.getElementById('in-tag').value,
         buyDate: toStandardDate(document.getElementById('in-buy').value),
-        expiry: toStandardDate(document.getElementById('in-exp').value),
+        expiry: checkExp, // 直接使用檢查過的結果
         barcode: document.getElementById('in-bar').value,
         status: document.getElementById('in-status').value
     };
@@ -990,19 +1003,19 @@
         const idx = db.findIndex(x => x.id == eid);
         if(idx !== -1) db[idx] = { ...db[idx], ...data, name: baseName };
     } else {
-        const timestamp = Date.now(); // 取得統一的時間基準
+        const timestamp = Date.now(); 
         for(let i=0; i<qty; i++) {
-            // 💡 自動補零邏輯：如果總數 >= 10，則編號補為兩位數 (01, 02...)
             const currentNum = String(i + 1).padStart(qty >= 10 ? 2 : 1, '0');
             const newName = qty > 1 ? `${baseName} (${currentNum}/${qty})` : baseName;
             
             db.push({ 
-                id: String(timestamp + i), // 確保 ID 隨 i 遞增，排序更穩定
+                id: String(timestamp + i), 
                 name: newName, 
                 ...data 
             });
         }
     }
+
     save(); closeEntry(); refresh();
 }
 
@@ -1673,13 +1686,22 @@ function renderVault() {
         event.target.value = ''; // 重置以支援重複選取同一檔案
     }
 
-
+    
     window.onload = () => { 
-    setupDateAutoFormat('in-buy'); 
-    setupDateAutoFormat('in-exp'); 
-    if(document.getElementById('check-input')) document.getElementById('check-input').value = '';
-    refresh(); 
-};
+        setupDateAutoFormat('in-buy'); 
+        setupDateAutoFormat('in-exp'); 
+        
+        // 💡 新增：監聽搜尋框，達成即時連動
+        const checkInput = document.getElementById('check-input');
+        if (checkInput) {
+            checkInput.addEventListener('input', () => {
+                doCheck();
+                getRecommended(); // 推薦區也會跟著搜尋關鍵字變動
+            });
+            checkInput.value = '';
+        }
+        refresh(); 
+    };
 
 </script>
 </body>
