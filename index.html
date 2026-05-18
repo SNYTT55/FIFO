@@ -1613,29 +1613,40 @@ function renderVault() {
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
     
-    // --- [備份] 匯出檔案 (對齊 retail_v52 版本) ---
+   // --- [備份] 匯出 CSV 檔案 ---
     function exportDataToFile() {
-        // 直接使用變數 db，並確保它有內容
         if (!db || db.length === 0) {
             alert("ERROR: DATABASE_IS_EMPTY");
             return;
         }
+    
+        // 1. 取得所有欄位名稱 (Headers)
+        const headers = Object.keys(db[0]);
         
-        // 包裝完整備份：包含資料 (db) 與 配置 (cfg)
-        const backupData = {
-            version: "RETAIL_V52",
-            timestamp: new Date().toISOString(),
-            db: db,   // 這裡直接引用你的全域變數 db
-            cfg: cfg  // 同時備份你的分類配置
-        };
-
-        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        // 2. 建立 CSV 內容
+        let csvRows = [];
+        csvRows.push(headers.join(",")); // 加入標題列
+    
+        for (const row of db) {
+            const values = headers.map(header => {
+                const val = row[header] === null || row[header] === undefined ? "" : row[header];
+                // 處理內容包含逗號或引號的情況
+                const escaped = ('' + val).replace(/"/g, '""');
+                return `"${escaped}"`;
+            });
+            csvRows.push(values.join(","));
+        }
+        
+        const csvString = csvRows.join("\n");
+    
+        // 3. 建立下載 (加入 \ufeff 是為了讓 Excel 正確識別 UTF-8，解決中文亂碼)
+        const blob = new Blob(["\ufeff" + csvString], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
         const a = document.createElement('a');
         const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
         a.href = url;
-        a.download = `RT_backup_${dateStr}.json`;
+        a.download = `RT_backup_${dateStr}.csv`;
         document.body.appendChild(a);
         a.click();
         
@@ -1644,46 +1655,57 @@ function renderVault() {
             window.URL.revokeObjectURL(url);
         }, 0);
     }
-
+    
+    // --- [備份] 匯入 CSV 檔案 ---
     function importDataFromFile(event) {
         const file = event.target.files[0];
         if (!file) return;
-
+    
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const json = JSON.parse(e.target.result);
+                const content = e.target.result;
+                const rows = content.split(/\r?\n/).filter(row => row.trim() !== "");
                 
-                // 檢查是否為有效的備份結構
-                const importedDb = json.db || (Array.isArray(json) ? json : null);
+                if (rows.length < 2) throw new Error("檔案內容過短或無資料");
+    
+                // 1. 解析標題列
+                const headers = rows[0].split(",").map(h => h.replace(/^"|"$/g, '').trim());
                 
-                if (!importedDb) {
-                    throw new Error("INVALID_FORMAT");
-                }
-
-                if (confirm(`DETECTED: ${importedDb.length} RECORDS. OVERWRITE CURRENT DATABASE?`)) {
-                    // 更新全域變數
-                    db = importedDb;
-                    
-                    // 如果檔案包含配置，同步還原
-                    if (json.cfg) {
-                        cfg = json.cfg;
+                // 2. 解析資料列
+                const importedDb = [];
+                for (let i = 1; i < rows.length; i++) {
+                    // 簡單的 CSV 分割邏輯（處理引號）
+                    const regex = /(".*?"|[^",\s]+)(?=\s*,|\s*$)/g;
+                    const values = [];
+                    let match;
+                    while ((match = regex.exec(rows[i])) !== null) {
+                        values.push(match[0].replace(/^"|"$/g, '').replace(/""/g, '"'));
                     }
-
-                    // 執行存檔與刷新
-                    save(); 
-                    refresh();
-                    
-                    alert("PROTOCOL_RESTORE_SUCCESS");
-                    location.reload(); 
+    
+                    if (values.length > 0) {
+                        let obj = {};
+                        headers.forEach((header, index) => {
+                            obj[header] = values[index] || "";
+                        });
+                        importedDb.push(obj);
+                    }
+                }
+    
+                if (confirm(`偵測到 ${importedDb.length} 筆資料。是否要覆蓋目前的資料庫？`)) {
+                    db = importedDb;
+                    save(); // 執行您原有的存檔函數
+                    refresh(); // 執行您原有的刷新畫面函數
+                    alert("CSV 資料還原成功！");
+                    location.reload();
                 }
             } catch (err) {
-                alert("CRITICAL_ERROR: FILE_CORRUPTED_OR_INVALID");
+                alert("讀取 CSV 失敗，請檢查檔案格式是否正確。");
                 console.error(err);
             }
         };
         reader.readAsText(file);
-        event.target.value = ''; // 重置以支援重複選取同一檔案
+        event.target.value = ''; 
     }
 
     
