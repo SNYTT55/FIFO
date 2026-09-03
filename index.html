@@ -686,72 +686,63 @@
 
 <script>
 
-    const STORE_DB = 'sss_db'; 
-    const STORE_CFG = 'sss_cfg';
+ // 你的 Apps Script 部署網址
+const API_URL = "https://script.google.com/macros/s/AKfycbxGx6H2Gj7RfiuhhD7RA7f9_XtU140qnGh1x9_zd70vw8d2T8FFFaOWJpKft8ZZCJQf/exec";
 
-    let db = JSON.parse(localStorage.getItem(STORE_DB) || '[]');
-    // 確保 cfg 結構健全，包含 cats 與 subCats 兩個欄位
-    let cfg = JSON.parse(localStorage.getItem(STORE_CFG) || '{"cats":"","subCats":""}');
-    let activeCat = "";
+// 全域變數宣告區（請加在程式碼最上方）
 
-    let scannerInstance = null;
+let db = [];
+let cfg = {
+    cats: "",
+    subCats: {}
+};
+let activeCat = ""; // 補上這行，用來記錄目前選中的分類
 
-    async function toggleScanner() {
-        const container = document.getElementById('qr-reader-container');
-        const barcodeInput = document.getElementById('in-bar');
 
-        // 1. 如果掃描器正在運行，則關閉它
-        if (scannerInstance) {
-            await stopScanner();
-            return;
-        }
-
-        // 2. 顯示掃描器容器
-        container.style.display = 'block';
-
-        // 3. 初始化掃描器
-        scannerInstance = new Html5Qrcode("qr-reader");
-
-        const config = { 
-            fps: 10, 
-            qrbox: { width: 250, height: 120 }, // 針對條碼優化的長方框
-            aspectRatio: 1.777778 
-        };
-
-        scannerInstance.start(
-            { facingMode: "environment" }, // 使用後鏡頭
-            config,
-            (decodedText) => {
-                // 成功掃描後的動作
-                barcodeInput.value = decodedText;
-                
-                // 手機震動回饋 (選用)
-                if (navigator.vibrate) navigator.vibrate(100);
-                
-                // 自動關閉掃描器
-                stopScanner();
-            },
-            (errorMessage) => {
-                // 掃描中... 靜默處理
+// 1. 從試算表讀取資料 (取代原本從 localStorage 讀取)
+function loadFromCloud() {
+    console.log("正在從 Google 試算表同步資料...");
+    fetch(`${API_URL}?action=load`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.db) db = data.db;
+            if (data.cfg) {
+                cfg.cats = data.cfg.cats;
+                cfg.cfg = data.cfg.subCats; // 確保對應你的物件結構
             }
-        ).catch(err => {
-            console.error("相機啟動失敗:", err);
-            alert("無法啟動相機。請確保在 HTTPS 環境下使用，並已授予權限。");
-            container.style.display = 'none';
+            refresh();
+            console.log("同步完成！");
+        })
+        .catch(err => {
+            console.error("雲端載入失敗，改用本地暫存", err);
+            // 可以在這裡降級讀取 localStorage
         });
-    }
+}
 
-    async function stopScanner() {
-        if (scannerInstance) {
-            await scannerInstance.stop();
-            scannerInstance = null;
-        }
-        document.getElementById('qr-reader-container').style.display = 'none';
-    }
-    function save() { 
-        localStorage.setItem(STORE_DB, JSON.stringify(db)); 
-        localStorage.setItem(STORE_CFG, JSON.stringify(cfg)); 
-    }
+// 2. 儲存資料到試算表 (取代或擴充原本的 save 函數)
+function save() {
+    // 依然可以保留 localStorage 作為本地備份與加速
+    localStorage.setItem('retail_db', JSON.stringify(db));
+    localStorage.setItem('retail_cfg', JSON.stringify(cfg));
+
+    // 同步推送到雲端試算表
+    fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors", // Google Apps Script 跨域標準設定
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            action: "save",
+            db: db,
+            cfg: cfg
+        })
+    }).then(() => {
+        console.log("已同步至 Google 試算表");
+    }).catch(err => {
+        console.error("同步雲端失敗", err);
+    });
+}
   
 
     function renderDict() {
@@ -1613,6 +1604,48 @@ function renderVault() {
     function quickUse(id) { useItem(id); getRecommended(); }
     function saveCfg() { cfg.cats = document.getElementById('cfg-cats').value; save(); refresh(); }
     
+    // 輔助函數：把任何奇怪的日期格式（如帶有 T16:00:00.000Z）切成 YYYY-MM-DD
+function cleanDateStr(dateStr) {
+    if (!dateStr) return "";
+    // 如果是標準 ISO 字串或包含 T，直接切取前 10 碼
+    const str = String(dateStr);
+    if (str.includes("T")) {
+        return str.split("T")[0];
+    }
+    // 如果剛好是 10 碼以內的日期，直接回傳
+    return str.substring(0, 10);
+}
+
+// 修正你的 loadFromCloud 函數，在資料賦值給 db 之前先洗過一次日期
+function loadFromCloud() {
+    console.log("正在從 Google 試算表同步資料...");
+    fetch(`${API_URL}?action=load`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.db && Array.isArray(data.db)) {
+                // 🧹 自動清洗 db 裡面所有項目的日期欄位
+                db = data.db.map(item => {
+                    return {
+                        ...item,
+                        expiry: cleanDateStr(item.expiry),
+                        buyDate: cleanDateStr(item.buyDate),
+                        openDate: cleanDateStr(item.openDate),
+                        finishDate: cleanDateStr(item.finishDate)
+                    };
+                });
+            }
+            if (data.cfg) {
+                cfg.cats = data.cfg.cats;
+                cfg.subCats = data.cfg.subCats;
+            }
+            refresh();
+            console.log("同步完成！");
+        })
+        .catch(err => {
+            console.error("雲端載入失敗", err);
+        });
+}
+
     // --- [備份] 匯出檔案 (對齊 retail_v52 版本) ---
     function exportDataToFile() {
         // 直接使用變數 db，並確保它有內容
@@ -1688,20 +1721,21 @@ function renderVault() {
 
     
     window.onload = () => { 
-        setupDateAutoFormat('in-buy'); 
-        setupDateAutoFormat('in-exp'); 
-        
-        // 💡 新增：監聽搜尋框，達成即時連動
-        const checkInput = document.getElementById('check-input');
-        if (checkInput) {
-            checkInput.addEventListener('input', () => {
-                doCheck();
-                getRecommended(); // 推薦區也會跟著搜尋關鍵字變動
-            });
-            checkInput.value = '';
-        }
-        refresh(); 
-    };
+    setupDateAutoFormat('in-buy'); 
+    setupDateAutoFormat('in-exp'); 
+    
+    const checkInput = document.getElementById('check-input');
+    if (checkInput) {
+        checkInput.addEventListener('input', () => {
+            doCheck();
+            getRecommended();
+        });
+        checkInput.value = '';
+    }
+    
+    // 從 Google 試算表載入資料（載入完成後會自動觸發 refresh()）
+    loadFromCloud(); 
+};
 
 </script>
 </body>
