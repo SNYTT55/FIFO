@@ -950,6 +950,24 @@ function save() {
         return inputVal; // 如果長度不對，就回傳原值
     }   
     
+function generateNextId() {
+    if (!db || db.length === 0) return "R-001";
+    
+    let maxNum = 0;
+    db.forEach(item => {
+        const idStr = String(item.id || "");
+        if (idStr.startsWith("R-")) {
+            const num = parseInt(idStr.replace("R-", ""), 10);
+            if (!isNaN(num) && num > maxNum) {
+                maxNum = num;
+            }
+        }
+    });
+    
+    const nextNum = maxNum + 1;
+    return "R-" + String(nextNum).padStart(3, '0');
+}
+
 function saveEntry() {
     const eid = document.getElementById('edit-id').value;
     const cat = document.getElementById('in-cat').value;
@@ -994,13 +1012,12 @@ function saveEntry() {
         const idx = db.findIndex(x => x.id == eid);
         if(idx !== -1) db[idx] = { ...db[idx], ...data, name: baseName };
     } else {
-        const timestamp = Date.now(); 
         for(let i=0; i<qty; i++) {
             const currentNum = String(i + 1).padStart(qty >= 10 ? 2 : 1, '0');
             const newName = qty > 1 ? `${baseName} (${currentNum}/${qty})` : baseName;
             
             db.push({ 
-                id: String(timestamp + i), 
+                id: generateNextId(), 
                 name: newName, 
                 ...data 
             });
