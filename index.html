@@ -1263,12 +1263,18 @@ function saveEntry() {
     usingItems.sort((a, b) => {
         const catA = a.category || "";
         const catB = b.category || "";
-        
-        // 第一優先：比對大分類名稱
+        const subA = a.subCat || "";
+        const subB = b.subCat || "";
+
+        // 1. 第一優先：比對大分類 (category)
         if (catA !== catB) {
             return catA.localeCompare(catB);
         }
-        // 第二優先：分類相同時，用名稱進行自然數值排序（如 01 < 02 < 10）
+        // 2. 第二優先：大分類相同時，比對子分類 (subCat)，這樣同性質的（例如乳液/霜、杏仁酸）就會全部聚在一起！
+        if (subA !== subB) {
+            return subA.localeCompare(subB);
+        }
+        // 3. 第三優先：子分類也一樣時，才用名稱自然排序
         return a.name.localeCompare(b.name, undefined, { numeric: true });
     });
 
