@@ -85,6 +85,7 @@
             -webkit-appearance: none; /* 移除 iOS 預設樣式 */
             border-radius: 0;
             background-color: #fff;
+            appearance: none;
         }
 
         /* 3. 確保預設選項（Placeholder）也是黑色的 */
@@ -250,6 +251,7 @@
             align-items: center;
             justify-content: center;
             -webkit-appearance: none;
+            appearance: none;
         }
 
 
@@ -270,6 +272,7 @@
             align-items: center;
             justify-content: center;
             -webkit-appearance: none;
+            appearance: none;
         }
 
 
@@ -291,6 +294,7 @@
             align-items: center;
             justify-content: center ;
             -webkit-appearance: none ;
+            appearance: none;
         }
 
 
@@ -304,6 +308,7 @@
             cursor: pointer;
             box-shadow: 2px 2px 0px #000; 
             padding: 4px 12px;
+            appearance: none;
         }
 
         .btn-danger:active { transform: translate(1px, 1px); box-shadow: none; }
@@ -1253,12 +1258,18 @@ function saveEntry() {
     function renderVault() {
     const container = document.getElementById('vault-shelves-container');
     
-    // 1. 處理【使用中】項目：按開啟日期排序 (早開的排前面)
+    // 1. 處理【使用中】項目：改為依「大分類」排序，同分類再比名稱
     const usingItems = db.filter(i => i.status === '使用中');
     usingItems.sort((a, b) => {
-        const dateA = a.openDate || "9999-12-31";
-        const dateB = b.openDate || "9999-12-31";
-        return dateA.localeCompare(dateB);
+        const catA = a.category || "";
+        const catB = b.category || "";
+        
+        // 第一優先：比對大分類名稱
+        if (catA !== catB) {
+            return catA.localeCompare(catB);
+        }
+        // 第二優先：分類相同時，用名稱進行自然數值排序（如 01 < 02 < 10）
+        return a.name.localeCompare(b.name, undefined, { numeric: true });
     });
 
     // 2. 處理【庫存】項目：關鍵排序邏輯
